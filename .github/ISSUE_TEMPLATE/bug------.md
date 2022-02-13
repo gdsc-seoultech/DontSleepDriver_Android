@@ -3,7 +3,7 @@ name: Bug 수정 요청
 about: 버그 수정을 위한 issue 요청
 title: "[Bug]: "
 labels: bug
-assignees: ''
+assignees: comye1
 
 ---
 

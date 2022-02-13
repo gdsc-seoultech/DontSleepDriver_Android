@@ -2,8 +2,8 @@
 name: Feature 요청
 about: 기능 추가
 title: "[Feature]:"
-labels: ''
-assignees: ''
+labels: feature
+assignees: comye1
 
 ---
 
