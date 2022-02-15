@@ -2,9 +2,9 @@ package com.comye1.dontsleepdriver.screens
 
 import android.content.Context
 import android.media.MediaPlayer
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -14,10 +14,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.PersonOutline
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -28,7 +26,9 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.comye1.dontsleepdriver.R
 import com.comye1.dontsleepdriver.ui.theme.Purple500
+import kotlinx.coroutines.launch
 
+@ExperimentalMaterialApi
 @Composable
 fun MainScreen() {
 
@@ -42,61 +42,86 @@ fun MainScreen() {
         mutableStateOf(R.raw.rooster)
     }
 
-    Scaffold(
-        bottomBar = {
-            BottomAppBar() {
-                Spacer(modifier = Modifier.weight(1f))
-                IconButton(onClick = { /*TODO*/ }) {
-                    Icon(
-                        imageVector = Icons.Default.History,
-                        contentDescription = "Driving History"
-                    )
-                }
-                IconButton(onClick = { showSoundDialog(true) }) {
-                    Icon(imageVector = Icons.Default.MusicNote, contentDescription = "Ring Tone")
-                }
-                IconButton(onClick = { /*TODO*/ }) {
-                    Icon(imageVector = Icons.Default.PersonOutline, contentDescription = "Account")
+    val modalBottomSheetState =
+        rememberModalBottomSheetState(initialValue = ModalBottomSheetValue.Hidden)
+
+    val scope = rememberCoroutineScope()
+
+    ModalBottomSheetLayout(
+        sheetContent = {
+            AccountBottomSheetContent {
+                scope.launch {
+                    modalBottomSheetState.hide()
                 }
             }
         },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = { },
-                modifier = Modifier
-                    .offset(y = 48.dp)
-                    .size(108.dp),
-                backgroundColor = Color.Black,
-                contentColor = Color.White
-            ) {
+        sheetState = modalBottomSheetState,
+        sheetShape = RoundedCornerShape(8.dp)
+    ) {
+        Scaffold(
+            bottomBar = {
+                BottomAppBar() {
+                    Spacer(modifier = Modifier.weight(1f))
+                    IconButton(onClick = { /*TODO*/ }) {
+                        Icon(
+                            imageVector = Icons.Default.History,
+                            contentDescription = "Driving History"
+                        )
+                    }
+                    IconButton(onClick = { showSoundDialog(true) }) {
+                        Icon(
+                            imageVector = Icons.Default.MusicNote,
+                            contentDescription = "Ring Tone"
+                        )
+                    }
+                    IconButton(onClick = {
+                        scope.launch {
+                            modalBottomSheetState.show()
+                        }
+                    }) {
+                        Icon(
+                            imageVector = Icons.Default.PersonOutline,
+                            contentDescription = "Account"
+                        )
+                    }
+                }
+            },
+            floatingActionButton = {
+                FloatingActionButton(
+                    onClick = { },
+                    modifier = Modifier
+                        .offset(y = 48.dp)
+                        .size(108.dp),
+                    backgroundColor = Color.Black,
+                    contentColor = Color.White
+                ) {
 //                Icon(
 //                    imageVector = Icons.Default.PlayArrow,
 //                    contentDescription = "start",
 //                    Modifier.size(48.dp)
 //                )
-                Text(text = "START", fontSize = 32.sp, fontWeight = FontWeight.Bold)
-            }
-        },
-        floatingActionButtonPosition = FabPosition.Center
-    ) {
-        Column(
-            Modifier
-                .fillMaxSize()
-                .padding(16.dp)
+                    Text(text = "START", fontSize = 32.sp, fontWeight = FontWeight.Bold)
+                }
+            },
+            floatingActionButtonPosition = FabPosition.Center
         ) {
-            Text(text = "Main Screen")
-
+            Column(
+                Modifier
+                    .fillMaxSize()
+                    .padding(16.dp)
+            ) {
+                Text(text = "Main Screen")
+                Text(text = selectedSound.value.toString())
+            }
+            if (soundDialogShown) {
+                SoundDialog(
+                    onDismiss = { showSoundDialog(false) },
+                    onOK = { selectedSound.value = it },
+                    selected = selectedSound.value
+                )
+            }
         }
-        if (soundDialogShown) {
-            SoundDialog(
-                onDismiss = { showSoundDialog(false) },
-                onOK = { selectedSound.value = it },
-                selected = selectedSound.value
-            )
-        }
-        Text(text = selectedSound.value.toString())
     }
-
 }
 
 @Composable
@@ -225,5 +250,35 @@ fun SoundRadioRow(
         )
         Spacer(modifier = Modifier.width(32.dp))
         Text(text = soundName)
+    }
+}
+
+@ExperimentalMaterialApi
+@Composable
+fun AccountBottomSheetContent(signOut: () -> Unit) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .padding(32.dp),
+        verticalAlignment = Alignment.CenterVertically,
+//        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+
+        Text(
+            text = "devyewon@gmail.com",
+            style = MaterialTheme.typography.h6,
+            modifier = Modifier.fillMaxWidth(.6f)
+        )
+        Spacer(modifier = Modifier.width(16.dp))
+        OutlinedButton(
+            onClick = signOut,
+            border = BorderStroke(1.dp, Color.Red),
+            modifier = Modifier.weight(1f)
+        ) {
+            Text(
+                text = "Sign Out",
+                color = Color.Red
+            )
+        }
     }
 }
