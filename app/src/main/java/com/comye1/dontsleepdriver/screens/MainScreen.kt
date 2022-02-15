@@ -215,7 +215,14 @@ fun SoundRadioRow(
             .fillMaxWidth()
             .clickable { onClick() }
             .padding(16.dp)) {
-        RadioButton(selected = selected, onClick = { onClick() })
+        RadioButton(
+            selected = selected,
+            enabled = false,
+            onClick = {},
+            colors = RadioButtonDefaults.colors(
+                disabledColor = Purple500
+            )
+        )
         Spacer(modifier = Modifier.width(32.dp))
         Text(text = soundName)
     }
