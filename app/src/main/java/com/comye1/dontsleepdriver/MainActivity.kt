@@ -15,6 +15,9 @@ import com.comye1.dontsleepdriver.screens.SignUpScreen
 import com.comye1.dontsleepdriver.screens.SplashScreen
 import com.comye1.dontsleepdriver.ui.theme.DontSleepDriverTheme
 
+@ExperimentalMaterialApi
+@androidx.camera.core.ExperimentalGetImage
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -77,5 +80,28 @@ fun Greeting(name: String) {
 fun DefaultPreview() {
     DontSleepDriverTheme {
         Greeting("Android")
+    }
+}
+
+private const val REQUEST_FOREGROUND_ONLY_PERMISSIONS_REQUEST = 34
+private fun foregroundPermissionApproved(context: Context): Boolean {
+    return PackageManager.PERMISSION_GRANTED == ActivityCompat.checkSelfPermission(
+        context, Manifest.permission.CAMERA
+    )
+}
+
+private fun requestForegroundPermission(context: Context) {
+    val provideRationale = foregroundPermissionApproved(context)
+
+    if (provideRationale) {
+        ActivityCompat.requestPermissions(
+            context as Activity,
+            arrayOf(Manifest.permission.CAMERA), REQUEST_FOREGROUND_ONLY_PERMISSIONS_REQUEST
+        )
+    } else {
+        ActivityCompat.requestPermissions(
+            context as Activity,
+            arrayOf(Manifest.permission.CAMERA), REQUEST_FOREGROUND_ONLY_PERMISSIONS_REQUEST
+        )
     }
 }
