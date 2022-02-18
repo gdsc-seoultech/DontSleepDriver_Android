@@ -1,11 +1,12 @@
-package com.comye1.dontsleepdriver.screens
+package com.comye1.dontsleepdriver.signin
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.*
+import androidx.compose.material.MaterialTheme
+import androidx.compose.material.OutlinedButton
+import androidx.compose.material.OutlinedTextField
+import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -16,18 +17,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.comye1.dontsleepdriver.R
 
 @Composable
-fun LogInScreen(toMain: () -> Unit, toSignUp: () -> Unit) {
-    val (id, setID) = remember {
-        mutableStateOf("")
-    }
-
-    val (pw, setPW) = remember {
-        mutableStateOf("")
-    }
-
+fun SignInScreen(
+    toMain: () -> Unit,
+    toSignUp: () -> Unit,
+    viewModel: SignInViewModel = hiltViewModel()
+) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
 
@@ -41,29 +39,19 @@ fun LogInScreen(toMain: () -> Unit, toSignUp: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             LogoSection()
-            Spacer(modifier = Modifier.height(16.dp))
-            OutlinedTextField(
-                value = id,
-                onValueChange = setID,
-                label = { Text(text = "아이디") },
-                modifier = Modifier.fillMaxWidth()
+            SignInFields(
+                email = viewModel.email,
+                password = viewModel.password,
+                onEmailChange = { viewModel.email = it },
+                onPasswordChange = { viewModel.password = it }
             )
-            Spacer(modifier = Modifier.height(16.dp))
-            OutlinedTextField(
-                value = pw,
-                onValueChange = setPW,
-                label = { Text(text = "비밀번호") },
-                modifier = Modifier.fillMaxWidth(),
-                visualTransformation = PasswordVisualTransformation()
-            )
-            Spacer(modifier = Modifier.height(16.dp))
             OutlinedButton(
                 onClick = {
                     toMain()
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(text = "로그인")
+                Text(text = "Sign in")
             }
             Spacer(modifier = Modifier.height(16.dp))
             OutlinedButton(
@@ -72,10 +60,10 @@ fun LogInScreen(toMain: () -> Unit, toSignUp: () -> Unit) {
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(text = "회원가입")
+                Text(text = "Sign up")
             }
             Spacer(modifier = Modifier.height(16.dp))
-            OAuthLogInButton(
+            OAuthSignInButton(
                 modifier = Modifier.fillMaxWidth(),
                 painter = painterResource(id = R.drawable.ic_google_icon),
                 size = 24.dp,
@@ -84,7 +72,7 @@ fun LogInScreen(toMain: () -> Unit, toSignUp: () -> Unit) {
 
             }
             Spacer(modifier = Modifier.height(16.dp))
-            OAuthLogInButton(
+            OAuthSignInButton(
                 modifier = Modifier.fillMaxWidth(),
                 painter = painterResource(id = R.drawable.kakao_logo_img),
                 size = 24.dp,
@@ -93,7 +81,7 @@ fun LogInScreen(toMain: () -> Unit, toSignUp: () -> Unit) {
 
             }
             Spacer(modifier = Modifier.height(16.dp))
-            OAuthLogInButton(
+            OAuthSignInButton(
                 modifier = Modifier.fillMaxWidth(),
                 painter = painterResource(id = R.drawable.naver_logo_img),
                 size = 28.dp,
@@ -105,10 +93,39 @@ fun LogInScreen(toMain: () -> Unit, toSignUp: () -> Unit) {
     }
 }
 
+@Composable
+fun SignInFields(
+    email: String,
+    password: String,
+    onEmailChange: (String) -> Unit,
+    onPasswordChange: (String) -> Unit
+) {
+    Spacer(modifier = Modifier.height(16.dp))
+    OutlinedTextField(
+        value = email,
+        onValueChange = onEmailChange,
+        label = { Text(text = "Email") },
+        modifier = Modifier.fillMaxWidth()
+    )
+    Spacer(modifier = Modifier.height(16.dp))
+    OutlinedTextField(
+        value = password,
+        onValueChange = onPasswordChange,
+        label = { Text(text = "Password") },
+        modifier = Modifier.fillMaxWidth(),
+        visualTransformation = PasswordVisualTransformation()
+    )
+    Spacer(modifier = Modifier.height(16.dp))
+}
+
 
 @Composable
 fun LogoSection() {
-    Text(text = "Don't Sleep Driver!", style = MaterialTheme.typography.h4, fontWeight = FontWeight.Bold)
+    Text(
+        text = "Don't Sleep Driver!",
+        style = MaterialTheme.typography.h4,
+        fontWeight = FontWeight.Bold
+    )
     Spacer(modifier = Modifier.height(16.dp))
     Image(
         painter = painterResource(id = R.drawable.driving_img),
@@ -118,7 +135,7 @@ fun LogoSection() {
 }
 
 @Composable
-fun OAuthLogInButton(
+fun OAuthSignInButton(
     modifier: Modifier = Modifier,
     painter: Painter,
     size: Dp,
