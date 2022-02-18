@@ -112,6 +112,7 @@ fun MainScreen() {
             ) {
                 Text(text = "Main Screen")
                 Text(text = selectedSound.value.toString())
+                CameraView()
             }
             if (soundDialogShown) {
                 SoundDialog(
