@@ -1,19 +1,28 @@
 package com.comye1.dontsleepdriver
 
+import android.Manifest
+import android.app.Activity
+import android.content.Context
+import android.content.pm.PackageManager
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.core.app.ActivityCompat
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.comye1.dontsleepdriver.screens.LogInScreen
 import com.comye1.dontsleepdriver.screens.MainScreen
-import com.comye1.dontsleepdriver.screens.SignUpScreen
 import com.comye1.dontsleepdriver.screens.SplashScreen
+import com.comye1.dontsleepdriver.signin.SignInScreen
+import com.comye1.dontsleepdriver.signup.SignUpScreen
 import com.comye1.dontsleepdriver.ui.theme.DontSleepDriverTheme
+import com.kakao.sdk.user.UserApiClient
+import dagger.hilt.android.AndroidEntryPoint
 
 @ExperimentalMaterialApi
 @androidx.camera.core.ExperimentalGetImage
@@ -31,7 +40,7 @@ class MainActivity : ComponentActivity() {
                 ) {
                     composable("splash") {
                         SplashScreen {
-                            navController.navigate("log_in"){
+                            navController.navigate("sign_in"){
                                 popUpTo("splash"){
                                     inclusive = true
                                 }
@@ -41,28 +50,40 @@ class MainActivity : ComponentActivity() {
                     composable("main") {
                         MainScreen()
                     }
-                    composable("log_in") {
-                        LogInScreen(
+                    composable("sign_in") {
+                        requestForegroundPermission(this@MainActivity)
+                        SignInScreen(
                             toMain = {
                                 navController.navigate("main"){
-                                    popUpTo("log_in"){
+                                    popUpTo("sign_in"){
                                         inclusive = true
                                     }
                                 }
                             },
                             toSignUp = {
                                 navController.navigate("sign_up")
+                            },
+                            kakaoSignIn = {
+                                UserApiClient.instance.loginWithKakaoTalk(this@MainActivity) { token, error ->
+                                    if (error != null) {
+                                        Log.e("kakao", "로그인 실패", error)
+                                    }
+                                    else if (token != null) {
+                                        Log.i("kakao", "access token ${token.accessToken}")
+                                        Log.i("kakao", "refresh token ${token.refreshToken}")
+                                    }
+                                }
                             }
                         )
                     }
                     composable("sign_up") {
-                        SignUpScreen {
-                            navController.navigate("log_in"){
+                        SignUpScreen (toLogIn = {
+                            navController.navigate("sign_in"){
                                 popUpTo("sign_up"){
                                     inclusive = true
                                 }
                             }
-                        }
+                        })
                     }
                 }
             }

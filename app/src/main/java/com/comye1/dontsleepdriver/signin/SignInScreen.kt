@@ -24,6 +24,7 @@ import com.comye1.dontsleepdriver.R
 fun SignInScreen(
     toMain: () -> Unit,
     toSignUp: () -> Unit,
+    kakaoSignIn: () -> Unit,
     viewModel: SignInViewModel = hiltViewModel()
 ) {
     val scope = rememberCoroutineScope()
@@ -78,7 +79,7 @@ fun SignInScreen(
                 size = 24.dp,
                 text = "Sign in with Kakao"
             ) {
-
+                kakaoSignIn()
             }
             Spacer(modifier = Modifier.height(16.dp))
             OAuthSignInButton(

@@ -1,11 +1,14 @@
 package com.comye1.dontsleepdriver
 
 import android.app.Application
-import androidx.camera.camera2.Camera2Config
-import androidx.camera.core.CameraXConfig
+import com.kakao.sdk.common.KakaoSdk
 import dagger.hilt.android.HiltAndroidApp
 
 @HiltAndroidApp
-class DSDApplication: Application() {
+class DSDApplication : Application() {
 
+    override fun onCreate() {
+        super.onCreate()
+        KakaoSdk.init(this, BuildConfig.KAKAO_API_KEY)
+    }
 }
