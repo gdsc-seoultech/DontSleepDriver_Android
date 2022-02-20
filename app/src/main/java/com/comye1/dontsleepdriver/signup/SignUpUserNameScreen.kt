@@ -32,10 +32,10 @@ fun SignUpUserNameScreen(
         modifier = Modifier.fillMaxWidth(),
     )
     Spacer(modifier = Modifier.height(16.dp))
-    // 이메일 유효성 검사 (공백, 이메일 패턴)
 
-    if (userName.isBlank()) {
-        Text(text = "Enter your name", color = Color.Red)
+    // 이름 유효성 검사 (공백, 이메일 패턴)
+    if (userName.length < 2 || userName.length > 30) {
+        Text(text = "Name must be between 8-30 characters", color = Color.Red)
         Spacer(modifier = Modifier.height(16.dp))
         showNextButton.value = false
     }else {
