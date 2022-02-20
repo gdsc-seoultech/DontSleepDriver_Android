@@ -91,4 +91,18 @@ class DSDRepository @Inject constructor(
         return Resource.Success(response)
     }
 
+    private val soundSharedPref: SharedPreferences = context.getSharedPreferences(
+        "sound",
+        Context.MODE_PRIVATE
+    )
+
+    fun saveSound(id: Int, email: String) {
+        tokenSharedPref.edit {
+            putInt(email, id)
+            commit()
+        }
+    }
+
+    fun getSavedSound(email: String): Int = tokenSharedPref.getInt(email, -1)
+
 }

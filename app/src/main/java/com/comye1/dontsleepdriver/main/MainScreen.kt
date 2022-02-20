@@ -27,8 +27,6 @@ import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.comye1.dontsleepdriver.R
 import com.comye1.dontsleepdriver.data.model.LocalUser
-import com.comye1.dontsleepdriver.main.MainViewModel
-import com.comye1.dontsleepdriver.main.CameraView
 import com.comye1.dontsleepdriver.ui.theme.Purple500
 import kotlinx.coroutines.launch
 
@@ -174,7 +172,8 @@ fun MainScreen(viewModel: MainViewModel = hiltViewModel()) {
     }
 
     val selectedSound = remember {
-        mutableStateOf(R.raw.rooster)
+        // 뷰모델, repository에서 가져와야 함
+        viewModel.selectedSound
     }
 
     val modalBottomSheetState =
@@ -252,7 +251,11 @@ fun MainScreen(viewModel: MainViewModel = hiltViewModel()) {
             if (soundDialogShown) {
                 SoundDialog(
                     onDismiss = { showSoundDialog(false) },
-                    onOK = { selectedSound.value = it },
+                    onOK = {
+                        selectedSound.value = it
+                        // 뷰모델 통해 repository에 저장
+                        viewModel.saveSound(it)
+                    },
                     selected = selectedSound.value
                 )
             }
@@ -272,7 +275,7 @@ fun AccountBottomSheetContent(user: LocalUser?, signOut: () -> Unit) {
     ) {
 
         Text(
-            text = user?.email?:"email",
+            text = user?.email ?: "email",
             style = MaterialTheme.typography.h6,
             modifier = Modifier.fillMaxWidth(.6f)
         )
