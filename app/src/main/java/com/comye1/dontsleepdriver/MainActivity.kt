@@ -16,7 +16,7 @@ import androidx.core.app.ActivityCompat
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.comye1.dontsleepdriver.screens.MainScreen
+import com.comye1.dontsleepdriver.main.MainScreen
 import com.comye1.dontsleepdriver.screens.SplashScreen
 import com.comye1.dontsleepdriver.signin.SignInScreen
 import com.comye1.dontsleepdriver.signup.SignUpScreen
@@ -40,8 +40,8 @@ class MainActivity : ComponentActivity() {
                 ) {
                     composable("splash") {
                         SplashScreen {
-                            navController.navigate("sign_in"){
-                                popUpTo("splash"){
+                            navController.navigate("sign_in") {
+                                popUpTo("splash") {
                                     inclusive = true
                                 }
                             }
@@ -54,8 +54,8 @@ class MainActivity : ComponentActivity() {
                         requestForegroundPermission(this@MainActivity)
                         SignInScreen(
                             toMain = {
-                                navController.navigate("main"){
-                                    popUpTo("sign_in"){
+                                navController.navigate("main") {
+                                    popUpTo("sign_in") {
                                         inclusive = true
                                     }
                                 }
@@ -67,19 +67,23 @@ class MainActivity : ComponentActivity() {
                                 UserApiClient.instance.loginWithKakaoTalk(this@MainActivity) { token, error ->
                                     if (error != null) {
                                         Log.e("kakao", "로그인 실패", error)
-                                    }
-                                    else if (token != null) {
+                                    } else if (token != null) {
                                         Log.i("kakao", "access token ${token.accessToken}")
                                         Log.i("kakao", "refresh token ${token.refreshToken}")
+                                        navController.navigate("main") {
+                                            popUpTo("sign_in") {
+                                                inclusive = true
+                                            }
+                                        }
                                     }
                                 }
                             }
                         )
                     }
                     composable("sign_up") {
-                        SignUpScreen (toLogIn = {
-                            navController.navigate("sign_in"){
-                                popUpTo("sign_up"){
+                        SignUpScreen(toLogIn = {
+                            navController.navigate("sign_in") {
+                                popUpTo("sign_up") {
                                     inclusive = true
                                 }
                             }

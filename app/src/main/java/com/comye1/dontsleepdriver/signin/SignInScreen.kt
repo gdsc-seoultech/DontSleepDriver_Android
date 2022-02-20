@@ -51,7 +51,7 @@ fun SignInScreen(
             )
             OutlinedButton(
                 onClick = {
-                    viewModel.signIn { token -> toMain(token) }
+                    viewModel.signIn { toMain() }
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {

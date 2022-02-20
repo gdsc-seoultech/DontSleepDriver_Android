@@ -27,7 +27,7 @@ class SignInViewModel @Inject constructor(
 
 
     // 로그인 요청
-    fun signIn(onComplete: (String) -> Unit) {
+    fun signIn(onComplete: () -> Unit) {
         val emailCheck = emailChecker()
         if (emailCheck.first) {
             viewModelScope.launch {
@@ -36,7 +36,7 @@ class SignInViewModel @Inject constructor(
                         is Resource.Success -> {
                             messageChannel.send(it.data?.data?.token?: "no token")
                             Log.d("signup 2", it.data?.message ?: "null")
-                            onComplete(it.data!!.data!!.token)
+                            onComplete()
                         }
                         is Resource.Error -> {
                             messageChannel.send("Sign In Failed")
