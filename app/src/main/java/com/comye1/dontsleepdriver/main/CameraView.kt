@@ -1,4 +1,4 @@
-package com.comye1.dontsleepdriver.screens
+package com.comye1.dontsleepdriver.main
 
 import android.content.Context
 import androidx.camera.core.CameraSelector

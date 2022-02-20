@@ -74,6 +74,21 @@ class DSDRepository @Inject constructor(
 
     private fun getSavedToken(): String? = tokenSharedPref.getString("TOKEN", null)
 
-    fun String.toTokenMap(): Map<String, String>
+    private fun String.toTokenMap(): Map<String, String>
     = mapOf(Pair("Authorization", this))
+
+
+    suspend fun getUser(): Resource<DSDResponse> {
+        Log.d("repo 5", "Get user")
+        val token = getSavedToken() ?: return Resource.Error("token does not exist")
+        val response = try {
+            api.getUser(token.toTokenMap())
+        } catch (e: Exception) {
+            Log.d("repo 5 exception", e.toString())
+            return Resource.Error(e.message ?: "")
+        }
+        Log.d("repo 5 success", response.data!!.email)
+        return Resource.Success(response)
+    }
+
 }

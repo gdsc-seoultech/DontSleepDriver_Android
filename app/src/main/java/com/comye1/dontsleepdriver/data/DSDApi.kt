@@ -2,6 +2,8 @@ package com.comye1.dontsleepdriver.data
 
 import com.comye1.dontsleepdriver.data.model.*
 import retrofit2.http.Body
+import retrofit2.http.GET
+import retrofit2.http.HeaderMap
 import retrofit2.http.POST
 
 interface DSDApi {
@@ -23,5 +25,10 @@ interface DSDApi {
     @POST("api/auth")
     suspend fun signIn(
         @Body body: SignInBody
+    ): DSDResponse
+
+    @GET("api/user")
+    suspend fun getUser(
+        @HeaderMap header: Map<String, String>
     ): DSDResponse
 }

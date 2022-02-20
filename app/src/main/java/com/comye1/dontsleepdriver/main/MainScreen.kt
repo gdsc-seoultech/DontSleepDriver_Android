@@ -1,4 +1,4 @@
-package com.comye1.dontsleepdriver.screens
+package com.comye1.dontsleepdriver.main
 
 import android.content.Context
 import android.media.MediaPlayer
@@ -24,106 +24,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.comye1.dontsleepdriver.R
+import com.comye1.dontsleepdriver.data.model.LocalUser
+import com.comye1.dontsleepdriver.main.MainViewModel
+import com.comye1.dontsleepdriver.main.CameraView
 import com.comye1.dontsleepdriver.ui.theme.Purple500
 import kotlinx.coroutines.launch
-
-@ExperimentalMaterialApi
-@Composable
-fun MainScreen() {
-
-    val context = LocalContext.current
-
-    val (soundDialogShown, showSoundDialog) = remember {
-        mutableStateOf(false)
-    }
-
-    val selectedSound = remember {
-        mutableStateOf(R.raw.rooster)
-    }
-
-    val modalBottomSheetState =
-        rememberModalBottomSheetState(initialValue = ModalBottomSheetValue.Hidden)
-
-    val scope = rememberCoroutineScope()
-
-    ModalBottomSheetLayout(
-        sheetContent = {
-            AccountBottomSheetContent {
-                scope.launch {
-                    modalBottomSheetState.hide()
-                }
-            }
-        },
-        sheetState = modalBottomSheetState,
-        sheetShape = RoundedCornerShape(8.dp)
-    ) {
-        Scaffold(
-            bottomBar = {
-                BottomAppBar() {
-                    Spacer(modifier = Modifier.weight(1f))
-                    IconButton(onClick = { /*TODO*/ }) {
-                        Icon(
-                            imageVector = Icons.Default.History,
-                            contentDescription = "Driving History"
-                        )
-                    }
-                    IconButton(onClick = { showSoundDialog(true) }) {
-                        Icon(
-                            imageVector = Icons.Default.MusicNote,
-                            contentDescription = "Ring Tone"
-                        )
-                    }
-                    IconButton(onClick = {
-                        scope.launch {
-                            modalBottomSheetState.show()
-                        }
-                    }) {
-                        Icon(
-                            imageVector = Icons.Default.PersonOutline,
-                            contentDescription = "Account"
-                        )
-                    }
-                }
-            },
-            floatingActionButton = {
-                FloatingActionButton(
-                    onClick = { },
-                    modifier = Modifier
-                        .offset(y = 48.dp)
-                        .size(108.dp),
-                    backgroundColor = Color.Black,
-                    contentColor = Color.White
-                ) {
-//                Icon(
-//                    imageVector = Icons.Default.PlayArrow,
-//                    contentDescription = "start",
-//                    Modifier.size(48.dp)
-//                )
-                    Text(text = "START", fontSize = 32.sp, fontWeight = FontWeight.Bold)
-                }
-            },
-            floatingActionButtonPosition = FabPosition.Center
-        ) {
-            Column(
-                Modifier
-                    .fillMaxSize()
-                    .padding(16.dp)
-            ) {
-                Text(text = "Main Screen")
-                Text(text = selectedSound.value.toString())
-                CameraView()
-            }
-            if (soundDialogShown) {
-                SoundDialog(
-                    onDismiss = { showSoundDialog(false) },
-                    onOK = { selectedSound.value = it },
-                    selected = selectedSound.value
-                )
-            }
-        }
-    }
-}
 
 @Composable
 fun SoundDialog(
@@ -256,7 +163,106 @@ fun SoundRadioRow(
 
 @ExperimentalMaterialApi
 @Composable
-fun AccountBottomSheetContent(signOut: () -> Unit) {
+fun MainScreen(viewModel: MainViewModel = hiltViewModel()) {
+
+    val context = LocalContext.current
+
+    val user = viewModel.user.collectAsState()
+
+    val (soundDialogShown, showSoundDialog) = remember {
+        mutableStateOf(false)
+    }
+
+    val selectedSound = remember {
+        mutableStateOf(R.raw.rooster)
+    }
+
+    val modalBottomSheetState =
+        rememberModalBottomSheetState(initialValue = ModalBottomSheetValue.Hidden)
+
+    val scope = rememberCoroutineScope()
+
+    ModalBottomSheetLayout(
+        sheetContent = {
+            AccountBottomSheetContent(user.value) {
+                scope.launch {
+                    modalBottomSheetState.hide()
+                }
+            }
+        },
+        sheetState = modalBottomSheetState,
+        sheetShape = RoundedCornerShape(8.dp, 8.dp, 0.dp, 0.dp)
+    ) {
+        Scaffold(
+            bottomBar = {
+                BottomAppBar() {
+                    Spacer(modifier = Modifier.weight(1f))
+                    IconButton(onClick = { /*TODO*/ }) {
+                        Icon(
+                            imageVector = Icons.Default.History,
+                            contentDescription = "Driving History"
+                        )
+                    }
+                    IconButton(onClick = { showSoundDialog(true) }) {
+                        Icon(
+                            imageVector = Icons.Default.MusicNote,
+                            contentDescription = "Ring Tone"
+                        )
+                    }
+                    IconButton(onClick = {
+                        scope.launch {
+                            modalBottomSheetState.show()
+                        }
+                    }) {
+                        Icon(
+                            imageVector = Icons.Default.PersonOutline,
+                            contentDescription = "Account"
+                        )
+                    }
+                }
+            },
+            floatingActionButton = {
+                FloatingActionButton(
+                    onClick = { },
+                    modifier = Modifier
+                        .offset(y = 48.dp)
+                        .size(108.dp),
+                    backgroundColor = Color.Black,
+                    contentColor = Color.White
+                ) {
+//                Icon(
+//                    imageVector = Icons.Default.PlayArrow,
+//                    contentDescription = "start",
+//                    Modifier.size(48.dp)
+//                )
+                    Text(text = "START", fontSize = 32.sp, fontWeight = FontWeight.Bold)
+                }
+            },
+            floatingActionButtonPosition = FabPosition.Center
+        ) {
+            Column(
+                Modifier
+                    .fillMaxSize()
+                    .padding(16.dp)
+            ) {
+                Text(text = "Main Screen")
+                Text(text = selectedSound.value.toString())
+                CameraView()
+            }
+            if (soundDialogShown) {
+                SoundDialog(
+                    onDismiss = { showSoundDialog(false) },
+                    onOK = { selectedSound.value = it },
+                    selected = selectedSound.value
+                )
+            }
+        }
+    }
+}
+
+@ExperimentalMaterialApi
+@Composable
+fun AccountBottomSheetContent(user: LocalUser?, signOut: () -> Unit) {
     Row(
         Modifier
             .fillMaxWidth()
@@ -266,7 +272,7 @@ fun AccountBottomSheetContent(signOut: () -> Unit) {
     ) {
 
         Text(
-            text = "devyewon@gmail.com",
+            text = user?.email?:"email",
             style = MaterialTheme.typography.h6,
             modifier = Modifier.fillMaxWidth(.6f)
         )
