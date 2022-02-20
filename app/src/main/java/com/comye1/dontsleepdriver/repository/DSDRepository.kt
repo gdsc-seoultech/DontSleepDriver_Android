@@ -1,6 +1,9 @@
 package com.comye1.dontsleepdriver.repository
 
+import android.content.Context
+import android.content.SharedPreferences
 import android.util.Log
+import androidx.core.content.edit
 import com.comye1.dontsleepdriver.data.DSDApi
 import com.comye1.dontsleepdriver.data.model.*
 import com.comye1.dontsleepdriver.util.Resource
@@ -9,7 +12,8 @@ import javax.inject.Inject
 
 @ActivityScoped
 class DSDRepository @Inject constructor(
-    private val api: DSDApi
+    private val api: DSDApi,
+    context: Context
 ) {
     suspend fun requestEmailVerificationCode(email: String): Resource<DSDResponse> {
         val response = try {
@@ -52,6 +56,24 @@ class DSDRepository @Inject constructor(
             return Resource.Error(e.message ?: "")
         }
         Log.d("repo 4 success", response.success.toString())
+        saveToken(prefix = "Bearer",response.data?.token!!)
         return Resource.Success(response)
     }
+
+    private val tokenSharedPref: SharedPreferences = context.getSharedPreferences(
+        "token",
+        Context.MODE_PRIVATE
+    )
+
+    private fun saveToken(prefix: String, token: String) {
+        tokenSharedPref.edit {
+            putString("TOKEN", "$prefix $token")
+            commit()
+        }
+    }
+
+    private fun getSavedToken(): String? = tokenSharedPref.getString("TOKEN", null)
+
+    fun String.toTokenMap(): Map<String, String>
+    = mapOf(Pair("Authorization", this))
 }

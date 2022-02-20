@@ -1,10 +1,12 @@
 package com.comye1.dontsleepdriver.di
 
+import android.content.Context
 import com.comye1.dontsleepdriver.data.DSDApi
 import com.comye1.dontsleepdriver.repository.DSDRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -17,8 +19,9 @@ object AppModule {
     @Singleton
     @Provides
     fun provideDSDRepository(
-        api: DSDApi
-    ) = DSDRepository(api)
+        api: DSDApi,
+        @ApplicationContext context: Context
+    ) = DSDRepository(api, context)
 
     @Singleton
     @Provides
