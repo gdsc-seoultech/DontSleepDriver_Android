@@ -28,9 +28,22 @@ import dagger.hilt.android.AndroidEntryPoint
 @androidx.camera.core.ExperimentalGetImage
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    private lateinit var dsdIntent: Intent
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        dsdIntent = Intent().apply {
+            setClass(applicationContext, DSDActivity::class.java)
+        }
+
         setContent {
+
+            val (exitDialogShown, showExitDialog) = remember {
+                mutableStateOf(false)
+            }
+
             DontSleepDriverTheme {
                 val navController = rememberNavController()
 
@@ -47,18 +60,11 @@ class MainActivity : ComponentActivity() {
                             }
                         }
                     }
-                    composable("main") {
-                        MainScreen()
-                    }
                     composable("sign_in") {
                         requestForegroundPermission(this@MainActivity)
                         SignInScreen(
                             toMain = {
-                                navController.navigate("main") {
-                                    popUpTo("sign_in") {
-                                        inclusive = true
-                                    }
-                                }
+                                startActivity(dsdIntent)
                             },
                             toSignUp = {
                                 navController.navigate("sign_up")
@@ -70,11 +76,7 @@ class MainActivity : ComponentActivity() {
                                     } else if (token != null) {
                                         Log.i("kakao", "access token ${token.accessToken}")
                                         Log.i("kakao", "refresh token ${token.refreshToken}")
-                                        navController.navigate("main") {
-                                            popUpTo("sign_in") {
-                                                inclusive = true
-                                            }
-                                        }
+                                        startActivity(dsdIntent)
                                     }
                                 }
                             }

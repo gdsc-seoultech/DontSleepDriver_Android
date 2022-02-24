@@ -10,25 +10,20 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.MusicNote
-import androidx.compose.material.icons.filled.PersonOutline
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import androidx.hilt.navigation.compose.hiltViewModel
 import com.comye1.dontsleepdriver.R
 import com.comye1.dontsleepdriver.data.model.LocalUser
 import com.comye1.dontsleepdriver.ui.theme.Purple500
-import kotlinx.coroutines.launch
 
 @Composable
 fun SoundDialog(
@@ -156,110 +151,6 @@ fun SoundRadioRow(
         )
         Spacer(modifier = Modifier.width(32.dp))
         Text(text = soundName)
-    }
-}
-
-@ExperimentalMaterialApi
-@Composable
-fun MainScreen(viewModel: MainViewModel = hiltViewModel()) {
-
-    val context = LocalContext.current
-
-    val user = viewModel.user.collectAsState()
-
-    val (soundDialogShown, showSoundDialog) = remember {
-        mutableStateOf(false)
-    }
-
-    val selectedSound = remember {
-        // 뷰모델, repository에서 가져와야 함
-        viewModel.selectedSound
-    }
-
-    val modalBottomSheetState =
-        rememberModalBottomSheetState(initialValue = ModalBottomSheetValue.Hidden)
-
-    val scope = rememberCoroutineScope()
-
-    ModalBottomSheetLayout(
-        sheetContent = {
-            AccountBottomSheetContent(user.value) {
-                scope.launch {
-                    modalBottomSheetState.hide()
-                }
-            }
-        },
-        sheetState = modalBottomSheetState,
-        sheetShape = RoundedCornerShape(8.dp, 8.dp, 0.dp, 0.dp)
-    ) {
-        Scaffold(
-            bottomBar = {
-                BottomAppBar() {
-                    Spacer(modifier = Modifier.weight(1f))
-                    IconButton(onClick = { /*TODO*/ }) {
-                        Icon(
-                            imageVector = Icons.Default.History,
-                            contentDescription = "Driving History"
-                        )
-                    }
-                    IconButton(onClick = { showSoundDialog(true) }) {
-                        Icon(
-                            imageVector = Icons.Default.MusicNote,
-                            contentDescription = "Ring Tone"
-                        )
-                    }
-                    IconButton(onClick = {
-                        scope.launch {
-                            modalBottomSheetState.show()
-                        }
-                    }) {
-                        Icon(
-                            imageVector = Icons.Default.PersonOutline,
-                            contentDescription = "Account"
-                        )
-                    }
-                }
-            },
-            floatingActionButton = {
-                FloatingActionButton(
-                    onClick = { },
-                    modifier = Modifier
-                        .offset(y = 48.dp)
-                        .size(108.dp),
-                    backgroundColor = Color.Black,
-                    contentColor = Color.White
-                ) {
-//                Icon(
-//                    imageVector = Icons.Default.PlayArrow,
-//                    contentDescription = "start",
-//                    Modifier.size(48.dp)
-//                )
-                    Text(text = "START", fontSize = 32.sp, fontWeight = FontWeight.Bold)
-                }
-            },
-            floatingActionButtonPosition = FabPosition.Center
-        ) {
-            Column(
-                Modifier
-                    .fillMaxSize()
-                    .padding(16.dp)
-            ) {
-                Text(text = "Main Screen")
-                Text(text = selectedSound.value.toString())
-                CameraView()
-            }
-            if (soundDialogShown) {
-                SoundDialog(
-                    onDismiss = { showSoundDialog(false) },
-                    onOK = {
-                        selectedSound.value = it
-                        // 뷰모델 통해 repository에 저장
-                        viewModel.saveSound(it)
-                    },
-                    selected = selectedSound.value
-                )
-            }
-        }
     }
 }
 
