@@ -92,6 +92,16 @@ class MainActivity : ComponentActivity() {
                         })
                     }
                 }
+                BackHandler(
+                    onBack = {
+                        showExitDialog(true)
+                    }
+                )
+                if (exitDialogShown) {
+                    ExitDialog(onDismiss = { showExitDialog(false) }) {
+                        finishAffinity()
+                    }
+                }
             }
         }
     }
