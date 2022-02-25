@@ -11,7 +11,7 @@ android {
 
     defaultConfig {
         applicationId "com.comye1.dontsleepdriver"
-        minSdk 21
+        minSdk 26
         targetSdk 31
         versionCode 1
         versionName "1.0"
@@ -103,4 +103,18 @@ dependencies {
 
     // 카카오 로그인
     implementation "com.kakao.sdk:v2-user:2.8.6"
+
+    // Broadcast manager
+    implementation 'androidx.localbroadcastmanager:localbroadcastmanager:1.1.0'
+
+    // google location
+    implementation 'com.google.android.gms:play-services-location:19.0.1'
+
+    def lifecycle_version = "2.5.0-alpha03"
+    // lifecycle
+    // optional - helpers for implementing LifecycleOwner in a Service
+    implementation("androidx.lifecycle:lifecycle-service:$lifecycle_version")
+
+    // Easy Permissions
+    implementation 'pub.devrel:easypermissions:3.0.0'
 }
