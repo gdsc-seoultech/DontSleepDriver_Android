@@ -1,6 +1,8 @@
 package com.comye1.dontsleepdriver
 
+import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
@@ -11,23 +13,21 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ExitToApp
-import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.MusicNote
-import androidx.compose.material.icons.filled.PersonOutline
+import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.comye1.dontsleepdriver.main.AccountBottomSheetContent
 import com.comye1.dontsleepdriver.main.CameraView
 import com.comye1.dontsleepdriver.main.MainViewModel
 import com.comye1.dontsleepdriver.main.SoundDialog
+import com.comye1.dontsleepdriver.other.Constants.ACTION_SHOW_DSD_ACTIVITY
+import com.comye1.dontsleepdriver.other.Constants.ACTION_START_OR_RESUME_SERVICE
+import com.comye1.dontsleepdriver.service.TrackingService
 import com.comye1.dontsleepdriver.ui.theme.DontSleepDriverTheme
 import com.comye1.dontsleepdriver.ui.theme.Purple500
 import dagger.hilt.android.AndroidEntryPoint
@@ -54,6 +54,11 @@ class DSDActivity : ComponentActivity() {
                 mutableStateOf(false)
             }
 
+            // 운전 시작, 정지 제어
+            val (drivingState, setDrivingState) = remember {
+                mutableStateOf(false)
+            }
+
             val selectedSound = remember {
                 // 뷰모델, repository에서 가져와야 함
                 viewModel.selectedSound
@@ -63,6 +68,15 @@ class DSDActivity : ComponentActivity() {
                 rememberModalBottomSheetState(initialValue = ModalBottomSheetValue.Hidden)
 
             val scope = rememberCoroutineScope()
+
+            // Notification을 통해 시작된 경우
+            if (intent.action == ACTION_SHOW_DSD_ACTIVITY) {
+                Log.d("Tracking", "Pending Intent")
+                scope.launch {
+                    setDrivingState(true) // 버튼 상태 변경
+                    // 추후 notification에서의 동작으로 정지, 중지 시키면 판단 필요..
+                }
+            }
 
             DontSleepDriverTheme {
                 // A surface container using the 'background' color from the theme
@@ -116,23 +130,33 @@ class DSDActivity : ComponentActivity() {
                             },
                             floatingActionButton = {
                                 FloatingActionButton(
-                                    onClick = { },
+                                    onClick = {
+                                        if (drivingState) {
+                                            setDrivingState(false)
+                                        } else {
+                                            setDrivingState(true)
+                                            sendCommandToService(ACTION_START_OR_RESUME_SERVICE) // TrackingService 시작
+                                        }
+                                    },
                                     modifier = Modifier
                                         .offset(y = 48.dp)
                                         .size(108.dp),
                                     backgroundColor = Color.Black,
                                     contentColor = Color.White
                                 ) {
-//                Icon(
-//                    imageVector = Icons.Default.PlayArrow,
-//                    contentDescription = "start",
-//                    Modifier.size(48.dp)
-//                )
-                                    Text(
-                                        text = "START",
-                                        fontSize = 32.sp,
-                                        fontWeight = FontWeight.Bold
-                                    )
+                                    if (drivingState) {
+                                        Icon(
+                                            imageVector = Icons.Default.Stop,
+                                            contentDescription = "stop",
+                                            Modifier.size(48.dp)
+                                        )
+                                    } else {
+                                        Icon(
+                                            imageVector = Icons.Default.PlayArrow,
+                                            contentDescription = "start",
+                                            Modifier.size(48.dp)
+                                        )
+                                    }
                                 }
                             },
                             floatingActionButtonPosition = FabPosition.Center
@@ -178,6 +202,12 @@ class DSDActivity : ComponentActivity() {
         }
     }
 
+    // 서비스 호출
+    private fun sendCommandToService(action: String) =
+        Intent(applicationContext, TrackingService::class.java).also {
+            it.action = action
+            applicationContext.startService(it)
+        }
 }
 
 @Composable
