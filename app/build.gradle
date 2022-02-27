@@ -28,6 +28,9 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+    aaptOptions {
+        noCompress = "tflite"
+    }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
@@ -38,6 +41,7 @@ android {
     }
     buildFeatures {
         compose true
+        mlModelBinding true
     }
     composeOptions {
         kotlinCompilerExtensionVersion compose_version
@@ -52,6 +56,8 @@ android {
 
 dependencies {
 
+    implementation 'org.tensorflow:tensorflow-lite-support:0.1.0'
+    implementation 'org.tensorflow:tensorflow-lite-metadata:0.1.0'
     def nav_version = "2.4.1"
 
     implementation 'androidx.core:core-ktx:1.7.0'
@@ -117,4 +123,7 @@ dependencies {
 
     // Easy Permissions
     implementation 'pub.devrel:easypermissions:3.0.0'
+
+    // tensorflow lite
+    implementation 'org.tensorflow:tensorflow-lite:+'
 }

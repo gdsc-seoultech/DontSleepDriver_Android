@@ -1,6 +1,8 @@
 package com.comye1.dontsleepdriver.main
 
+import android.annotation.SuppressLint
 import android.content.Context
+import android.util.Log
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.Preview
@@ -18,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
+import com.comye1.dontsleepdriver.analyzer.SleepAnalyzer
 import java.util.concurrent.Executors
 
 @Composable
@@ -44,6 +47,7 @@ fun CameraView() {
     }
 }
 
+@SuppressLint("UnsafeOptInUsageError")
 @Composable
 fun DetectionView(
     context: Context,
@@ -65,11 +69,21 @@ fun DetectionView(
             factory = { ctx ->
                 val previewView = PreviewView(ctx)
                 cameraProviderFuture.addListener({
+
+                    val cameraProvider: ProcessCameraProvider = cameraProviderFuture.get()
+
+//                    preview = ImageAnalysis.Builder()
+//                        .setTargetResolution(Size(224, 224))
+
+                    val analyzer = SleepAnalyzer(context)
+
+                    Log.d("SleepAnalyzer", analyzer.toString())
+
                     val imageAnalysis = ImageAnalysis.Builder()
-//                        .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                        .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                         .build()
-                        .apply {
-//                            setAnalyzer(cameraExecutor, ObjectDetectorImageAnalyzer(textRecognizer, extractedText))
+                        .also { imageAnalysis ->
+                            imageAnalysis.setAnalyzer(executor, analyzer)
                         }
                     val cameraSelector = CameraSelector.Builder()
                         .requireLensFacing(CameraSelector.LENS_FACING_BACK)
