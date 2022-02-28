@@ -1,6 +1,10 @@
 package com.comye1.dontsleepdriver.signin
 
+import android.content.Context
+import android.util.Log
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.MaterialTheme
@@ -13,7 +17,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -21,17 +24,65 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.comye1.dontsleepdriver.R
+import com.comye1.dontsleepdriver.util.GoogleAuthResultContract
+import com.comye1.dontsleepdriver.util.getGoogleSignInClient
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.android.gms.common.api.ApiException
+import com.google.android.gms.tasks.Task
+import com.google.firebase.auth.FirebaseAuthProvider
+import com.kakao.sdk.user.UserApiClient
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
+
 
 @Composable
 fun SignInScreen(
     toMain: () -> Unit,
     toSignUp: () -> Unit,
     kakaoSignIn: () -> Unit,
+    context: Context,
     viewModel: SignInViewModel = hiltViewModel()
 ) {
     val scope = rememberCoroutineScope()
-    val context = LocalContext.current
+
+    val signInRequestCode = 1
+    val launcher =
+        rememberLauncherForActivityResult(contract = ActivityResultContracts.StartActivityForResult()) {
+            val task = GoogleSignIn.getSignedInAccountFromIntent(it.data)
+            Log.d("google", "task : $task")
+            try {
+                val account = task.getResult(ApiException::class.java)!!
+                scope.launch {
+                    viewModel.googleSignIn(account.idToken ?: "null")
+                }
+            } catch (e: ApiException) {
+                scope.launch {
+                    viewModel.oAuthFailed()
+                }
+                Log.d("google", "exception ${e.message}")
+            }
+        }
+
+//    val authResultLauncher =
+//        rememberLauncherForActivityResult(contract = GoogleAuthResultContract()) { task ->
+//            try {
+//                val account = task.getResult(ApiException::class.java)!!
+//                Log.d("google", "task : $task")
+//                if (account == null) {
+//                    Log.d("google", "null")
+//                    viewModel.oAuthFailed()
+//                } else {
+//                    viewModel.googleSignIn(account.idToken!!)
+////                    account.email
+////                    account.displayName
+//                }
+//            } catch (e: ApiException) {
+//                viewModel.oAuthFailed()
+//                Log.d("google", "exception ${e.message!!}")
+//            }
+//        }
 
     Box(
         modifier = Modifier.fillMaxSize(),
@@ -73,7 +124,19 @@ fun SignInScreen(
                 size = 24.dp,
                 text = "Sign in with Google"
             ) {
+//                Log.d("google provider", FirebaseAuthProvider.PROVIDER_ID)
+//
+//                val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+//                    .requestIdToken(R.string.web_client_id.toString())
+//                    .requestEmail()
+//                    .build()
+//
+//                val googleSignInClient = GoogleSignIn.getClient(context, gso)
+                launcher.launch(getGoogleSignInClient(context).signInIntent)
 
+//                authResultLauncher.launch(signInRequestCode)
+//                val intent = getGoogleSignInClient(context).signInIntent
+//                handleSignInResult(GoogleSignIn.getSignedInAccountFromIntent(intent))
             }
             Spacer(modifier = Modifier.height(16.dp))
             OAuthSignInButton(
@@ -82,7 +145,18 @@ fun SignInScreen(
                 size = 24.dp,
                 text = "Sign in with Kakao"
             ) {
-                kakaoSignIn()
+                UserApiClient.instance.loginWithKakaoTalk(context) { token, error ->
+                    if (error != null) {
+                        Log.e("kakao", "로그인 실패", error)
+                        viewModel.oAuthFailed()
+                    } else if (token != null) {
+//                        Log.i("kakao", "access token ${token.accessToken}")
+//                        Log.i("kakao", "refresh token ${token.refreshToken}")
+                        viewModel.kakaoSignIn(token.accessToken) {
+                            toMain()
+                        }
+                    }
+                }
             }
             Spacer(modifier = Modifier.height(16.dp))
             OAuthSignInButton(
@@ -162,5 +236,17 @@ fun OAuthSignInButton(
         Row(Modifier.fillMaxWidth(.7f), horizontalArrangement = Arrangement.Center) {
             Text(text = text)
         }
+    }
+}
+
+private fun handleSignInResult(completedTask: Task<GoogleSignInAccount>) {
+    try {
+        val account: GoogleSignInAccount = completedTask.getResult(ApiException::class.java)
+        val idToken = account.idToken
+
+        // TODO(developer): send ID Token to server and validate
+        Log.d("googleAuth", idToken ?: "token null")
+    } catch (e: ApiException) {
+        Log.d("googleAuth", "handleSignInResult:error", e)
     }
 }

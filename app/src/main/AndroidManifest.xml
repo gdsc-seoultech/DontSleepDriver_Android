@@ -41,15 +41,23 @@
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
+
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
 
-                <data android:host="oauth"
+                <data
+                    android:host="oauth"
                     android:scheme="kakao${KAKAO_API_KEY}" />
+
             </intent-filter>
         </activity>
-        <service android:name=".service.TrackingService"
-            android:foregroundServiceType="location"/>
+
+        <service
+            android:name=".service.TrackingService"
+            android:foregroundServiceType="location" />
+        <meta-data
+            android:name="com.google.android.gms.wallet.api.enabled"
+            android:value="true" />
     </application>
 
 </manifest>
