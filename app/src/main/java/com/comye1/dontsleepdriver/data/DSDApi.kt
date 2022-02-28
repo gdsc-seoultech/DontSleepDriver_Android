@@ -31,4 +31,9 @@ interface DSDApi {
     suspend fun getUser(
         @HeaderMap header: Map<String, String>
     ): DSDResponse
+
+    @POST("api/auth/kakao")
+    suspend fun kakaoSignIn(
+        @Body body: OAuthBody
+    ): DSDResponse
 }

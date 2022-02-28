@@ -62,5 +62,30 @@ class SignInViewModel @Inject constructor(
             Pair(false, "Your email is not valid")
         } else Pair(true, "ok")
     }
+
+    fun oAuthFailed() {
+        viewModelScope.launch {
+            messageChannel.send("Sign In Failed")
+        }
+    }
+
+    fun kakaoSignIn(accessToken: String, onComplete: () -> Unit){
+        viewModelScope.launch {
+            repository.kakaoSignIn(accessToken = accessToken).also {
+                when(it) {
+                    is Resource.Success -> {
+                        messageChannel.send(it.data?.data?.token?: "no token")
+                        Log.d("signup kakao", it.data?.message ?: "null")
+                        onComplete()
+                    }
+                    is Resource.Error -> {
+                        messageChannel.send("Sign In Failed")
+                        Log.d("signup kakao", it.data?.error ?: "null")
+                    }
+                }
+            }
+        }
+    }
+
 }
 

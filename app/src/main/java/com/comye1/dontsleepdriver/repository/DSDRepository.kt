@@ -55,7 +55,7 @@ class DSDRepository @Inject constructor(
             Log.d("repo 4 exception", e.toString())
             return Resource.Error(e.message ?: "")
         }
-        Log.d("repo 4 success", response.success.toString())
+        Log.d("repo 4 token", response.data?.token!!)
         saveToken(prefix = "Bearer",response.data?.token!!)
         return Resource.Success(response)
     }
@@ -97,7 +97,7 @@ class DSDRepository @Inject constructor(
     )
 
     fun saveSound(id: Int, email: String) {
-        tokenSharedPref.edit {
+        soundSharedPref.edit {
             putInt(email, id)
             commit()
         }
@@ -105,4 +105,14 @@ class DSDRepository @Inject constructor(
 
     fun getSavedSound(email: String): Int = tokenSharedPref.getInt(email, -1)
 
+    suspend fun kakaoSignIn(accessToken: String): Resource<DSDResponse>{
+        val response = try {
+            api.kakaoSignIn(OAuthBody(accessToken))
+        } catch (e: Exception) {
+            Log.d("repo 6 exception", e.toString())
+            return Resource.Error(e.message ?: "")
+        }
+        Log.d("repo 5 success", response.data!!.email)
+        return Resource.Success(response)
+    }
 }
