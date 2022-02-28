@@ -87,5 +87,8 @@ class SignInViewModel @Inject constructor(
         }
     }
 
+    fun googleSignIn(accessToken: String) {
+        Log.d("signup google", accessToken)
+    }
 }
 

@@ -47,7 +47,6 @@ fun SignInScreen(
 ) {
     val scope = rememberCoroutineScope()
 
-    val signInRequestCode = 1
     val launcher =
         rememberLauncherForActivityResult(contract = ActivityResultContracts.StartActivityForResult()) {
             val task = GoogleSignIn.getSignedInAccountFromIntent(it.data)
@@ -56,6 +55,7 @@ fun SignInScreen(
                 val account = task.getResult(ApiException::class.java)!!
                 scope.launch {
                     viewModel.googleSignIn(account.idToken ?: "null")
+                    toMain()
                 }
             } catch (e: ApiException) {
                 scope.launch {
@@ -64,25 +64,6 @@ fun SignInScreen(
                 Log.d("google", "exception ${e.message}")
             }
         }
-
-//    val authResultLauncher =
-//        rememberLauncherForActivityResult(contract = GoogleAuthResultContract()) { task ->
-//            try {
-//                val account = task.getResult(ApiException::class.java)!!
-//                Log.d("google", "task : $task")
-//                if (account == null) {
-//                    Log.d("google", "null")
-//                    viewModel.oAuthFailed()
-//                } else {
-//                    viewModel.googleSignIn(account.idToken!!)
-////                    account.email
-////                    account.displayName
-//                }
-//            } catch (e: ApiException) {
-//                viewModel.oAuthFailed()
-//                Log.d("google", "exception ${e.message!!}")
-//            }
-//        }
 
     Box(
         modifier = Modifier.fillMaxSize(),
@@ -124,19 +105,7 @@ fun SignInScreen(
                 size = 24.dp,
                 text = "Sign in with Google"
             ) {
-//                Log.d("google provider", FirebaseAuthProvider.PROVIDER_ID)
-//
-//                val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-//                    .requestIdToken(R.string.web_client_id.toString())
-//                    .requestEmail()
-//                    .build()
-//
-//                val googleSignInClient = GoogleSignIn.getClient(context, gso)
                 launcher.launch(getGoogleSignInClient(context).signInIntent)
-
-//                authResultLauncher.launch(signInRequestCode)
-//                val intent = getGoogleSignInClient(context).signInIntent
-//                handleSignInResult(GoogleSignIn.getSignedInAccountFromIntent(intent))
             }
             Spacer(modifier = Modifier.height(16.dp))
             OAuthSignInButton(
