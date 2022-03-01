@@ -3,6 +3,7 @@ package com.comye1.dontsleepdriver.main
 import android.annotation.SuppressLint
 import android.content.Context
 import android.util.Log
+import android.util.Size
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.Preview
@@ -47,7 +48,7 @@ fun CameraView() {
     }
 }
 
-@SuppressLint("UnsafeOptInUsageError")
+@SuppressLint("UnsafeOptInUsageError", "RestrictedApi")
 @Composable
 fun DetectionView(
     context: Context,
@@ -73,23 +74,22 @@ fun DetectionView(
 //                    preview = ImageAnalysis.Builder()
 //                        .setTargetResolution(Size(224, 224))
 
-                    val analyzer = SleepAnalyzer(context)
+                    val analyzer = SleepAnalyzer(context) { extractedText.value = it }
 
                     Log.d("SleepAnalyzer", analyzer.toString())
 
                     val imageAnalysis = ImageAnalysis.Builder()
+                        .setMaxResolution(Size(224, 224))
                         .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                         .build()
-                        .also {
-                            it.setAnalyzer(executor, SleepAnalyzer(ctx))
-                        }
-//                        .apply {
-//                            setAnalyzer(executor, analyzer)
+//                        .also {
+//                            it.setAnalyzer(executor, analyzer)
 //                        }
+                        .apply {
+                            setAnalyzer(executor, analyzer)
+                        }
 
-                    val cameraSelector = CameraSelector.Builder()
-                        .requireLensFacing(CameraSelector.LENS_FACING_BACK)
-                        .build()
+                    val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
 
                     try {
                         cameraProvider.unbindAll()

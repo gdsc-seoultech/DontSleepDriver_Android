@@ -3,35 +3,39 @@ package com.comye1.dontsleepdriver.analyzer
 import android.content.Context
 import android.graphics.*
 import android.media.Image
+import android.speech.RecognitionListener
 import android.util.Log
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
 import com.comye1.dontsleepdriver.ml.SleepModel
+import org.tensorflow.lite.DataType
 import org.tensorflow.lite.support.image.TensorImage
 import java.io.ByteArrayOutputStream
 
 
 @androidx.camera.core.ExperimentalGetImage
-class SleepAnalyzer(context: Context) : ImageAnalysis.Analyzer {
+class SleepAnalyzer(context: Context, private val listener: (String) -> Unit) : ImageAnalysis.Analyzer {
 
     private val model: SleepModel by lazy {
         SleepModel.newInstance(context)
     }
 
     override fun analyze(image: ImageProxy) {
-        Log.d("SleepAnalyzer", "image : ${image.image}")
+        Log.d("SleepAnalyzer", "image : ${image.image.toString()}")
         if (image.image != null) {
-            Log.d("SleepAnalyzer", "image : ${image.image}")
             val tfImage = TensorImage.fromBitmap(image.image!!.toBitmap())
-//
+            Log.d("SleepAnalyzer", tfImage.tensorBuffer.shape.toString())
 
 
 //            Log.d("SleepAnalyzer", "model : ${model is SleepModel}")
             val output = model.process(tfImage.tensorBuffer)
-            Log.d("SleepAnalyzer", output.toString())
+//            Log.d("SleepAnalyzer", output.toString())
 
             Log.d("SleepAnalyzer", tfImage.toString())
 
+            listener(output.toString())
+
+//            listener(tfImage.tensorBuffer.intArray.size.toString())
             image.close()
         }
     }
