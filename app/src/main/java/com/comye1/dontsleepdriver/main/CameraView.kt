@@ -70,8 +70,6 @@ fun DetectionView(
                 val previewView = PreviewView(ctx)
                 cameraProviderFuture.addListener({
 
-                    val cameraProvider: ProcessCameraProvider = cameraProviderFuture.get()
-
 //                    preview = ImageAnalysis.Builder()
 //                        .setTargetResolution(Size(224, 224))
 
@@ -82,20 +80,32 @@ fun DetectionView(
                     val imageAnalysis = ImageAnalysis.Builder()
                         .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                         .build()
-                        .also { imageAnalysis ->
-                            imageAnalysis.setAnalyzer(executor, analyzer)
+                        .also {
+                            it.setAnalyzer(executor, SleepAnalyzer(ctx))
                         }
+//                        .apply {
+//                            setAnalyzer(executor, analyzer)
+//                        }
+
                     val cameraSelector = CameraSelector.Builder()
                         .requireLensFacing(CameraSelector.LENS_FACING_BACK)
                         .build()
-                    cameraProvider.unbindAll()
-                    cameraProvider.bindToLifecycle(
-                        lifecycleOwner,
-                        cameraSelector,
-                        imageAnalysis,
-                        preview
-                    )
-                }, executor)
+
+                    try {
+                        cameraProvider.unbindAll()
+                        cameraProvider.bindToLifecycle(
+                            lifecycleOwner,
+                            cameraSelector,
+                            preview,
+                            imageAnalysis
+                        )
+
+                    } catch (exception: Exception) {
+                        Log.d("CameraView", "use case binding failed $exception")
+                    }
+
+                }, ContextCompat.getMainExecutor(ctx))
+
                 preview = Preview.Builder().build().also {
                     it.setSurfaceProvider(previewView.surfaceProvider)
                 }
