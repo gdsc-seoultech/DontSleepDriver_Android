@@ -7,6 +7,7 @@ import android.util.Log
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
 import com.comye1.dontsleepdriver.ml.SleepModel
+import org.tensorflow.lite.DataType
 import org.tensorflow.lite.support.image.ImageProcessor
 import org.tensorflow.lite.support.image.TensorImage
 import org.tensorflow.lite.support.image.ops.ResizeOp
@@ -24,7 +25,8 @@ class SleepAnalyzer(context: Context, private val listener: (String) -> Unit) :
     override fun analyze(image: ImageProxy) {
         Log.d("SleepAnalyzer", "image : ${image.image.toString()}")
         if (image.image != null) {
-            var tfImage = TensorImage.fromBitmap(image.image!!.toBitmap())
+            var tfImage = TensorImage(DataType.FLOAT32)
+            tfImage.load(image.image!!.toBitmap())
             tfImage = imageProcessor.process(tfImage) // image resize
             Log.d("SleepAnalyzer", tfImage.tensorBuffer.shape.toString())
 
@@ -64,7 +66,7 @@ class SleepAnalyzer(context: Context, private val listener: (String) -> Unit) :
     // image resize processor
     private val imageProcessor =
         ImageProcessor.Builder()
-            .add(ResizeOp(224, 224, ResizeOp.ResizeMethod.BILINEAR))
+            .add(ResizeOp(640, 640, ResizeOp.ResizeMethod.BILINEAR))
             .build()
 }
 
