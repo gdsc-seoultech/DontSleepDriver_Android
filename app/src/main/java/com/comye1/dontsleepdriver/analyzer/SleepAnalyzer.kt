@@ -3,18 +3,19 @@ package com.comye1.dontsleepdriver.analyzer
 import android.content.Context
 import android.graphics.*
 import android.media.Image
-import android.speech.RecognitionListener
 import android.util.Log
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
 import com.comye1.dontsleepdriver.ml.SleepModel
-import org.tensorflow.lite.DataType
+import org.tensorflow.lite.support.image.ImageProcessor
 import org.tensorflow.lite.support.image.TensorImage
+import org.tensorflow.lite.support.image.ops.ResizeOp
 import java.io.ByteArrayOutputStream
 
 
 @androidx.camera.core.ExperimentalGetImage
-class SleepAnalyzer(context: Context, private val listener: (String) -> Unit) : ImageAnalysis.Analyzer {
+class SleepAnalyzer(context: Context, private val listener: (String) -> Unit) :
+    ImageAnalysis.Analyzer {
 
     private val model: SleepModel by lazy {
         SleepModel.newInstance(context)
@@ -23,7 +24,8 @@ class SleepAnalyzer(context: Context, private val listener: (String) -> Unit) : 
     override fun analyze(image: ImageProxy) {
         Log.d("SleepAnalyzer", "image : ${image.image.toString()}")
         if (image.image != null) {
-            val tfImage = TensorImage.fromBitmap(image.image!!.toBitmap())
+            var tfImage = TensorImage.fromBitmap(image.image!!.toBitmap())
+            tfImage = imageProcessor.process(tfImage) // image resize
             Log.d("SleepAnalyzer", tfImage.tensorBuffer.shape.toString())
 
 
@@ -58,5 +60,11 @@ class SleepAnalyzer(context: Context, private val listener: (String) -> Unit) : 
         val imageBytes = out.toByteArray()
         return BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
     }
+
+    // image resize processor
+    private val imageProcessor =
+        ImageProcessor.Builder()
+            .add(ResizeOp(224, 224, ResizeOp.ResizeMethod.BILINEAR))
+            .build()
 }
 
