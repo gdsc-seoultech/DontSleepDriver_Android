@@ -125,8 +125,8 @@ dependencies {
     // Easy Permissions
     implementation 'pub.devrel:easypermissions:3.0.0'
 
-    // tensorflow lite
-    implementation 'org.tensorflow:tensorflow-lite:+'
+    // Import tflite dependencies
+    implementation 'org.tensorflow:tensorflow-lite:0.0.0-nightly-SNAPSHOT'
 
     // Import the BoM for the Firebase platform
     implementation platform('com.google.firebase:firebase-bom:29.0.4')
@@ -137,4 +137,8 @@ dependencies {
 
     // Also declare the dependency for the Google Play services library and specify its version
     implementation 'com.google.android.gms:play-services-auth:20.1.0'
+
+    // google map
+    implementation "com.google.maps.android:maps-compose:1.0.0"
+    implementation "com.google.android.gms:play-services-maps:18.0.2"
 }
