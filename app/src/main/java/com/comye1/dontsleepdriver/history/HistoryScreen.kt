@@ -116,7 +116,7 @@ fun HistoryItem(item: Driving, onClick: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(text = "Sleep Level")
-            Text(text = "0.3")
+            Text(text = item.averageSleepLevel.toString())
         }
     }
 }

@@ -15,8 +15,8 @@ class HistoryViewModel @Inject constructor(
 
     val drivingList = listOf(
         Driving(
-            startTime = 1646541190226,
-            endTime = 1646541190226,
+            startTime = "04:33:10 06/03/2022",
+            endTime = "04:42:11 06/03/2022",
             gpsData = listOf(
                 LatLng(37.625500, 127.079877),
                 LatLng(37.627699, 127.081415),

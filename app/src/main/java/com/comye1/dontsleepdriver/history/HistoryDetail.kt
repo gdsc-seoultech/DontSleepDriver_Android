@@ -4,17 +4,21 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.comye1.dontsleepdriver.data.model.Driving
+import com.comye1.dontsleepdriver.util.secondToHMS
+import com.comye1.dontsleepdriver.util.simpleDateFormat
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.LatLngBounds
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.Polyline
 import com.google.maps.android.compose.rememberCameraPositionState
+import java.util.*
 
 
 @Composable
@@ -79,6 +83,15 @@ fun HistoryDetailScreen(driving: Driving) {
                 snippet = "Marker in end point"
             )
         }
+        Text(text = driving.startTime)
+        Text(text = " ~ ")
+        Text(text = driving.endTime)
+        Text(text = "Total driving time : ${secondToHMS(driving.totalTime)}")
+
+        driving.subDrivingList.let {
+
+        }
+        Text(text = "Average sleep level : ${driving.averageSleepLevel}")
     }
 }
 
