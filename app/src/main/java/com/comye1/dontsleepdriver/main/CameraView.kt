@@ -3,6 +3,7 @@ package com.comye1.dontsleepdriver.main
 import android.annotation.SuppressLint
 import android.content.Context
 import android.util.Log
+import android.util.Size
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.Preview
@@ -78,14 +79,14 @@ fun DetectionView(
                     Log.d("SleepAnalyzer", analyzer.toString())
 
                     val imageAnalysis = ImageAnalysis.Builder()
-//                        .setMaxResolution(Size(224, 224))
+                        .setMaxResolution(Size(480, 360))
                         .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                         .build()
                         .apply {
                             setAnalyzer(executor, analyzer)
                         }
 
-                    val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+                    val cameraSelector = CameraSelector.DEFAULT_FRONT_CAMERA
 
                     try {
                         cameraProvider.unbindAll()

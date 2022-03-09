@@ -144,4 +144,7 @@ dependencies {
 
     // 네이버 로그인
     implementation("com.navercorp.nid:oauth-jdk8:5.0.1") // jdk 8
+
+    // ml kit
+    implementation 'com.google.android.gms:play-services-mlkit-face-detection:17.0.1'
 }
