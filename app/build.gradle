@@ -141,4 +141,7 @@ dependencies {
     // google map
     implementation "com.google.maps.android:maps-compose:1.0.0"
     implementation "com.google.android.gms:play-services-maps:18.0.2"
+
+    // 네이버 로그인
+    implementation("com.navercorp.nid:oauth-jdk8:5.0.1") // jdk 8
 }

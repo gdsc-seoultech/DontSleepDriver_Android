@@ -24,15 +24,14 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.comye1.dontsleepdriver.R
-import com.comye1.dontsleepdriver.util.GoogleAuthResultContract
 import com.comye1.dontsleepdriver.util.getGoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
-import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.tasks.Task
-import com.google.firebase.auth.FirebaseAuthProvider
 import com.kakao.sdk.user.UserApiClient
+import com.navercorp.nid.NaverIdLoginSDK
+import com.navercorp.nid.oauth.OAuthLoginCallback
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 
@@ -134,7 +133,26 @@ fun SignInScreen(
                 size = 28.dp,
                 text = "Sign in with Naver"
             ) {
+                NaverIdLoginSDK.authenticate(context, callback = object : OAuthLoginCallback {
+                    override fun onError(errorCode: Int, message: String) {
+                        Log.d("naver", "error")
+                        viewModel.oAuthFailed()
+                    }
 
+                    override fun onFailure(httpStatus: Int, message: String) {
+                        Log.d("naver", "failure")
+                        viewModel.oAuthFailed()
+                    }
+
+                    override fun onSuccess() {
+                        NaverIdLoginSDK.getAccessToken()?.let {
+                            Log.d("naver", "success")
+                            viewModel.naverSignIn(it)
+                            toMain()
+                        } ?: viewModel.oAuthFailed()
+                    }
+
+                })
             }
         }
     }
