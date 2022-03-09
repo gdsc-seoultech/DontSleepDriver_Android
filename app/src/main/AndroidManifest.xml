@@ -20,6 +20,9 @@
         android:theme="@style/Theme.DontSleepDriver"
         android:usesCleartextTraffic="true"
         tools:targetApi="m">
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyCnRY2jHkBd3vsoUuI9oa_9eKdjiKWmsdQ"/>
         <activity
             android:name=".DSDActivity"
             android:exported="true"
