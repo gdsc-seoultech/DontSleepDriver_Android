@@ -7,6 +7,7 @@ import android.util.Log
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
 import com.comye1.dontsleepdriver.ml.SleepModel
+import com.google.mlkit.vision.common.InputImage
 import org.tensorflow.lite.DataType
 import org.tensorflow.lite.support.image.ImageProcessor
 import org.tensorflow.lite.support.image.TensorImage
@@ -25,19 +26,23 @@ class SleepAnalyzer(context: Context, private val listener: (String) -> Unit) :
     override fun analyze(image: ImageProxy) {
         Log.d("SleepAnalyzer", "image : ${image.image.toString()}")
         if (image.image != null) {
+
+//            val input = TensorBuffer.createFixedSize(intArrayOf(1,320,320,3), DataType.FLOAT32)
+//            input.loadBuffer(TensorImage.fromBitmap(image.image!!.toBitmap()).buffer)
+
+
             var tfImage = TensorImage(DataType.FLOAT32)
             tfImage.load(image.image!!.toBitmap())
             tfImage = imageProcessor.process(tfImage) // image resize
-            Log.d("SleepAnalyzer", tfImage.tensorBuffer.shape.toString())
+//            Log.d("SleepAnalyzer", tfImage.tensorBuffer.shape.toString())
 
+//            val output = model.process(tfImage)
 
 //            Log.d("SleepAnalyzer", "model : ${model is SleepModel}")
-            val output = model.process(tfImage.tensorBuffer)
+
 //            Log.d("SleepAnalyzer", output.toString())
 
-            Log.d("SleepAnalyzer", tfImage.toString())
-
-            listener(output.toString())
+//            listener(output.toString())
 
 //            listener(tfImage.tensorBuffer.intArray.size.toString())
             image.close()
@@ -66,7 +71,7 @@ class SleepAnalyzer(context: Context, private val listener: (String) -> Unit) :
     // image resize processor
     private val imageProcessor =
         ImageProcessor.Builder()
-            .add(ResizeOp(640, 640, ResizeOp.ResizeMethod.BILINEAR))
+            .add(ResizeOp(320, 320, ResizeOp.ResizeMethod.BILINEAR))
             .build()
 }
 
