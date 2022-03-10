@@ -1,17 +1,16 @@
 package com.comye1.dontsleepdriver.analyzer
 
 import android.content.Context
-import android.graphics.*
-import android.media.Image
 import android.util.Log
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.face.FaceDetection
 import com.google.mlkit.vision.face.FaceDetectorOptions
-import org.tensorflow.lite.support.image.ImageProcessor
-import org.tensorflow.lite.support.image.ops.ResizeOp
-import java.io.ByteArrayOutputStream
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 
 @androidx.camera.core.ExperimentalGetImage
@@ -53,7 +52,10 @@ class SleepAnalyzer(context: Context, private val listener: (String) -> Unit) :
                     Log.d("facedetection", e.message.toString())
                 }
                 .addOnCompleteListener {
-                    imageProxy.close()
+                    CoroutineScope(Dispatchers.IO).launch {
+                        delay(5000)
+                        imageProxy.close()
+                    }
                 }
         }
     }
