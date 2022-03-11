@@ -29,6 +29,9 @@ import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.tasks.Task
+import com.google.firebase.auth.GoogleAuthProvider
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.ktx.Firebase
 import com.kakao.sdk.user.UserApiClient
 import com.navercorp.nid.NaverIdLoginSDK
 import com.navercorp.nid.oauth.OAuthLoginCallback
@@ -226,14 +229,20 @@ fun OAuthSignInButton(
     }
 }
 
-private fun handleSignInResult(completedTask: Task<GoogleSignInAccount>) {
-    try {
-        val account: GoogleSignInAccount = completedTask.getResult(ApiException::class.java)
-        val idToken = account.idToken
-
-        // TODO(developer): send ID Token to server and validate
-        Log.d("googleAuth", idToken ?: "token null")
-    } catch (e: ApiException) {
-        Log.d("googleAuth", "handleSignInResult:error", e)
-    }
+private fun firebaseAuthWithGoogle(idToken: String) {
+    val auth = Firebase.auth
+    val credential = GoogleAuthProvider.getCredential(idToken, null)
+    auth.signInWithCredential(credential)
+        .addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                // Sign in success, update UI with the signed-in user's information
+                Log.d("signin credential", "signInWithCredential:success")
+                val user = auth.currentUser
+//                    updateUI(user)
+            } else {
+                // If sign in fails, display a message to the user.
+                Log.w("signin credential", "signInWithCredential:failure", task.exception)
+//                    updateUI(null)
+            }
+        }
 }

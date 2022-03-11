@@ -8,6 +8,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.comye1.dontsleepdriver.repository.DSDRepository
 import com.comye1.dontsleepdriver.util.Resource
+import com.google.firebase.auth.GoogleAuthProvider
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.ktx.Firebase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.receiveAsFlow
@@ -87,12 +90,29 @@ class SignInViewModel @Inject constructor(
         }
     }
 
-    fun googleSignIn(accessToken: String) {
-        Log.d("signup google", accessToken)
+    fun googleSignIn(idToken: String) {
+        Log.d("signup google", idToken)
+        val auth = Firebase.auth
+        val credential = GoogleAuthProvider.getCredential(idToken, null)
+        auth.signInWithCredential(credential)
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    // Sign in success, update UI with the signed-in user's information
+                    Log.d("signin credential", "signInWithCredential:success")
+                    val user = auth.currentUser
+
+//                    updateUI(user)
+                } else {
+                    // If sign in fails, display a message to the user.
+                    Log.w("signin credential", "signInWithCredential:failure", task.exception)
+//                    updateUI(null)
+                }
+            }
     }
 
     fun naverSignIn(accessToken: String) {
         Log.d("signup naver", accessToken)
     }
+
 }
 
