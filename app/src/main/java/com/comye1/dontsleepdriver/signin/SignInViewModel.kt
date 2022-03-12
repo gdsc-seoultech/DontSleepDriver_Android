@@ -92,22 +92,6 @@ class SignInViewModel @Inject constructor(
 
     fun googleSignIn(idToken: String) {
         Log.d("signup google", idToken)
-        val auth = Firebase.auth
-        val credential = GoogleAuthProvider.getCredential(idToken, null)
-        auth.signInWithCredential(credential)
-            .addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-                    // Sign in success, update UI with the signed-in user's information
-                    Log.d("signin credential", "signInWithCredential:success")
-                    val user = auth.currentUser
-
-//                    updateUI(user)
-                } else {
-                    // If sign in fails, display a message to the user.
-                    Log.w("signin credential", "signInWithCredential:failure", task.exception)
-//                    updateUI(null)
-                }
-            }
     }
 
     fun naverSignIn(accessToken: String) {

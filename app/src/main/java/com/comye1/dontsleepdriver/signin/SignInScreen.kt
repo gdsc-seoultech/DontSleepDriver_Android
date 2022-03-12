@@ -56,8 +56,11 @@ fun SignInScreen(
             try {
                 val account = task.getResult(ApiException::class.java)!!
                 scope.launch {
-                    viewModel.googleSignIn(account.idToken ?: "null")
-                    toMain()
+                    account.idToken?.let {
+                        Log.d("google", "${account.email} ${account.displayName}")
+                        viewModel.googleSignIn(it)
+                        toMain()
+                    }
                 }
             } catch (e: ApiException) {
                 scope.launch {
