@@ -1,24 +1,25 @@
 package com.comye1.dontsleepdriver.history
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.comye1.dontsleepdriver.data.model.Driving
 import com.comye1.dontsleepdriver.util.secondToHMS
-import com.comye1.dontsleepdriver.util.simpleDateFormat
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.LatLngBounds
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.Polyline
 import com.google.maps.android.compose.rememberCameraPositionState
-import java.util.*
 
 
 @Composable
@@ -83,16 +84,41 @@ fun HistoryDetailScreen(driving: Driving) {
                 snippet = "Marker in end point"
             )
         }
-        Text(text = driving.startTime)
-        Text(text = " ~ ")
-        Text(text = driving.endTime)
-        Text(text = "Total driving time : ${secondToHMS(driving.totalTime)}")
-
+        HistoryTitleText(text = "Driving started at")
+        HistoryContentText(text = driving.startTime)
+        HistoryTitleText(text = "Driving ended at")
+        HistoryContentText(text = driving.endTime)
+        HistoryTitleText(text = "Total driving time")
+        HistoryContentText(text = secondToHMS(driving.totalTime))
         driving.subDrivingList.let {
-
+            /*
+            TODO 부분적인 운전/휴식 시간을 계산해서 리스트로 보여주자!
+             */
         }
-        Text(text = "Average sleep level : ${driving.averageSleepLevel}")
+        HistoryTitleText(text = "Average sleep level")
+        HistoryContentText(text = driving.averageSleepLevel.toString())
     }
 }
 
+@Composable
+fun HistoryTitleText(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.h6,
+        fontWeight = FontWeight.Bold,
+        modifier = Modifier.padding(8.dp)
+    )
+}
+
+@Composable
+fun HistoryContentText(text: String) {
+    Text(
+        text = text,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp)
+            .background(Color.LightGray)
+            .padding(4.dp)
+    )
+}
 
