@@ -6,11 +6,9 @@ data class Driving(
     val startTime: String,
     val endTime: String,
     val gpsData: List<LatLng>,
-    val sleepData: List<Int>
-) {
+    val sleepData: List<Int>,
     val averageSleepLevel: Double
-        get() = sleepData.filterNot { it == -1 }.average()
-
+) {
     val subDrivingList: List<Pair<Int, Int>>
         get() {
             val list = mutableListOf<Pair<Int, Int>>()
