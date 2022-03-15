@@ -1,8 +1,11 @@
 package com.comye1.dontsleepdriver
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.util.AttributeSet
 import android.util.Log
+import android.view.View
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
@@ -21,6 +24,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.lifecycle.Observer
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -34,6 +38,7 @@ import com.comye1.dontsleepdriver.other.Constants.ACTION_START_OR_RESUME_SERVICE
 import com.comye1.dontsleepdriver.service.TrackingService
 import com.comye1.dontsleepdriver.ui.theme.DontSleepDriverTheme
 import com.comye1.dontsleepdriver.ui.theme.Purple500
+import com.comye1.dontsleepdriver.util.TrackingUtility
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
@@ -41,6 +46,12 @@ import kotlinx.coroutines.launch
 class DSDActivity : ComponentActivity() {
 
     private val viewModel: MainViewModel by viewModels()
+    private var curTimeInMillis = 0L
+
+    override fun onCreateView(name: String, context: Context, attrs: AttributeSet): View? {
+        subscribeToObservers()
+        return super.onCreateView(name, context, attrs)
+    }
 
     @ExperimentalMaterialApi
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -178,6 +189,7 @@ class DSDActivity : ComponentActivity() {
                                     ) {
                                         Text(text = "Main Screen")
                                         Text(text = selectedSound.value.toString())
+                                        Text(text = viewModel.curTimeText.value)
                                         CameraView()
                                     }
                                     if (soundDialogShown) {
@@ -212,6 +224,15 @@ class DSDActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    private fun subscribeToObservers(){
+        TrackingService.timeDrivingInMillis.observe(this, Observer {
+            curTimeInMillis = it
+            val formattedTime = TrackingUtility.getFormattedStopWatchTime(curTimeInMillis)
+            viewModel.updateTimeText(formattedTime)
+        })
+
     }
 
     // 서비스 호출

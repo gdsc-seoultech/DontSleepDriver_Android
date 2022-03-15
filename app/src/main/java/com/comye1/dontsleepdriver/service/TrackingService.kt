@@ -26,9 +26,14 @@ import com.comye1.dontsleepdriver.other.Constants.LOCATION_UPDATE_INTERVAL
 import com.comye1.dontsleepdriver.other.Constants.NOTIFICATION_CHANNEL_ID
 import com.comye1.dontsleepdriver.other.Constants.NOTIFICATION_CHANNEL_NAME
 import com.comye1.dontsleepdriver.other.Constants.NOTIFICATION_ID
+import com.comye1.dontsleepdriver.other.Constants.TIMER_UPDATE_INTERVAL
 import com.comye1.dontsleepdriver.util.TrackingUtility.hasLocationPermissions
 import com.google.android.gms.location.*
 import com.google.android.gms.location.LocationRequest.PRIORITY_HIGH_ACCURACY
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 class TrackingService : LifecycleService() {
 
@@ -36,6 +41,7 @@ class TrackingService : LifecycleService() {
         const val TAG = "TrackingService" // 로그 태그
         val isTracking = MutableLiveData<Boolean>() // tracking 상태
         val previousLocation = MutableLiveData<Location>()
+        val timeDrivingInMillis = MutableLiveData<Long>()
     }
 
     // 위치정보를 주기적으로 주는 Client
@@ -43,9 +49,47 @@ class TrackingService : LifecycleService() {
 
     var isFirstDriving = true // start or resume 판단
 
+    private val timeDrivingInSeconds = MutableLiveData<Long>()
+
+//    private fun
+
     private fun postInitialValues() { // 초기값
         isTracking.postValue(false)
         previousLocation.postValue(null)
+        timeDrivingInSeconds.postValue(0L)
+        timeDrivingInMillis.postValue(0L)
+    }
+
+    private var isTimerEnabled = false
+    private var labTime = 0L
+    private var timeDriving = 0L
+    private var timeStarted = 0L
+    private var lastSecondTimestamp = 0L
+
+    private fun startTimer() {
+        isTracking.postValue(true)
+        timeStarted = System.currentTimeMillis()
+        isTimerEnabled = true
+        CoroutineScope(Dispatchers.Main).launch {
+            while (isTracking.value!!) {
+                // time difference
+                labTime = System.currentTimeMillis() - timeStarted
+                // post the new labTime
+                timeDrivingInMillis.postValue(timeDriving + labTime)
+                if (timeDrivingInMillis.value!! >= lastSecondTimestamp + 1000L) {
+                    timeDrivingInSeconds.postValue(timeDrivingInSeconds.value!! + 1)
+                    lastSecondTimestamp += 1000L
+                }
+                delay(TIMER_UPDATE_INTERVAL)
+            }
+            timeDriving += labTime
+        }
+    }
+
+
+    private fun pauseService() {
+        isTracking.postValue(false)
+        isTimerEnabled = false
     }
 
     @SuppressLint("VisibleForTests")
@@ -71,10 +115,12 @@ class TrackingService : LifecycleService() {
                         Log.d(TAG, "starting")
                     } else {
                         Log.d(TAG, "resuming")
+                        startTimer()
                     }
                 }
                 ACTION_PAUSE_SERVICE -> {
                     Log.d(TAG, "paused")
+                    pauseService()
                 }
                 ACTION_STOP_SERVICE -> {
                     Log.d(TAG, "stopped")
@@ -142,6 +188,9 @@ class TrackingService : LifecycleService() {
 
     // Foreground Service 시작
     private fun startForegroundService() {
+
+        // timer 시작
+        startTimer()
 
         // tracking 시작
         isTracking.postValue(true)
