@@ -2,12 +2,13 @@ package com.comye1.dontsleepdriver.data.model
 
 import com.google.android.gms.maps.model.LatLng
 
-data class Driving(
+data class DrivingResponse(
+    val id: Int,
     val startTime: String,
     val endTime: String,
     val gpsData: List<LatLng>,
-    val sleepData: List<Int>,
-    val averageSleepLevel: Double
+    val gpsLevel: List<Int>,
+    val avgSleepLevel: Double
 ) {
     val subDrivingList: List<Pair<Int, Int>>
         get() {
@@ -15,7 +16,7 @@ data class Driving(
             var isDriving = false
             var start = 0
             // -1이 아닌 구간을 쪼개서 구간의 길이를 리스트로..
-            sleepData.forEachIndexed { index, i ->
+            gpsLevel.forEachIndexed { index, i ->
                 if (isDriving) {
                     if (i == -1) { // 운전 정지
                         list.add(Pair(start, index))
