@@ -10,6 +10,7 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.NavigateBefore
 import androidx.compose.material.icons.filled.NavigateNext
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -27,8 +28,6 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.comye1.dontsleepdriver.data.model.DrivingResponse
 import com.comye1.dontsleepdriver.ui.theme.DontSleepDriverTheme
-import com.comye1.dontsleepdriver.util.simpleDateFormat
-import java.util.*
 
 @Composable
 fun HistoryScreen(
@@ -61,10 +60,10 @@ fun HistoryScreen(
                 composable("history_main") {
                     appBarTitle.value = "Driving History"
                     HistoryMainScreen(
-                        drivingResponseList = viewModel.drivingList,
+                        curPageList = viewModel.subList,
                         curPage = viewModel.curPage.value,
                         totalPages = viewModel.totalPages.value,
-                        getPage = viewModel::getHistoryByPage
+                        getPage = viewModel::historyByPage
                     ) { idx ->
                         navController.navigate("history_detail/${idx}")
                     }
@@ -92,39 +91,43 @@ fun HistoryScreen(
 
 @Composable
 fun HistoryMainScreen(
-    drivingResponseList: List<DrivingResponse>,
+    curPageList: List<DrivingResponse>,
     curPage: Int,
     totalPages: Int,
     getPage: (Int) -> Unit,
     toDetail: (Int) -> Unit
 ) {
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.SpaceBetween
-    ) {
-        Text(text = "list size : ${drivingResponseList.size}")
-        Text(text = "curPage : $curPage")
-        Text(text = "totalPages : $totalPages")
-        drivingResponseList.forEachIndexed { index, driving ->
-            HistoryItem(item = driving) {
-                toDetail(index)
+    if (curPageList.isEmpty()) {
+        Text(text = "No data found", modifier = Modifier.padding(16.dp))
+    } else {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column {
+                curPageList.forEachIndexed { index, driving ->
+                    HistoryItem(item = driving) {
+                        toDetail((curPage - 1) * 6 + index)
+                    }
+                }
+            }
+            /*
+            2페이지 이상일 때만 버튼을 표시
+             */
+            if (totalPages > 1) {
+                PageButton(
+                    currentPage = curPage,
+                    totalPages = totalPages,
+                    toPreviousPage = {
+                        getPage(curPage - 1)
+                    },
+                    toNextPage = {
+                        getPage(curPage + 1)
+                    }
+                )
             }
         }
-        /*
-        2페이지 이상일 때만 버튼을 표시
-         */
-//        if (totalPages > 0) {
-            PageButton(
-                currentPage = curPage,
-                totalPages = totalPages,
-                toPreviousPage = {
-                    getPage(curPage - 1)
-                },
-                toNextPage = {
-                    getPage(curPage + 1)
-                }
-            )
-//        }
+
     }
 }
 
@@ -142,7 +145,7 @@ fun PageButton(
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        IconButton(onClick = { toPreviousPage() }, enabled = currentPage > 1) {
+        IconButton(onClick = { if (currentPage > 1) toPreviousPage() }, enabled = currentPage in 2..totalPages) {
             Icon(
                 imageVector = Icons.Default.NavigateBefore, contentDescription = "previous page",
                 modifier = Modifier.size(32.dp)
@@ -151,7 +154,7 @@ fun PageButton(
         Spacer(modifier = Modifier.width(16.dp))
         Text(text = "$currentPage / $totalPages", fontSize = dpToSp(dp = 16.dp))
         Spacer(modifier = Modifier.width(16.dp))
-        IconButton(onClick = { toNextPage() }, enabled = currentPage < totalPages) {
+        IconButton(onClick = { if (currentPage <= totalPages) toNextPage() }, enabled = currentPage < totalPages) {
             Icon(
                 imageVector = Icons.Default.NavigateNext,
                 contentDescription = "next page",

@@ -1,5 +1,6 @@
 package com.comye1.dontsleepdriver.history
 
+import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -18,34 +19,58 @@ class HistoryViewModel @Inject constructor(
     private val repository: DSDRepository
 ) : ViewModel() {
 
-    val totalPages = mutableStateOf(0)
+    val totalPages = mutableStateOf(1)
     val curPage = mutableStateOf(0)
+    private val curMaxPage = mutableStateOf(0)
+
     var drivingList by mutableStateOf(listOf<DrivingResponse>())
+        private set
+
+    var subList by mutableStateOf(listOf<DrivingResponse>())
         private set
 
     var selectedItem by mutableStateOf<DrivingResponse?>(null)
 
     init {
-//     drivingList.value = try {
-//         repository
-//     }
-//        viewModelScope.launch {
-            getHistoryPages()
-            getHistoryByPage(1)
+        getHistoryPages()
+        getHistoryByPage(1){
             curPage.value = 1
-//            if (totalPages.value > 0) {
-//                getHistoryByPage(1)
-//                curPage.value = 1
-//            }
-//        }
+            curMaxPage.value = 1
+        }
     }
 
-    fun getHistoryByPage(page: Int) {
+    fun historyByPage(page: Int){
+        if (curMaxPage.value < page) {
+            // 새로 받아온다
+            getHistoryByPage(page = page){
+                curMaxPage.value = page
+                curPage.value = page
+
+                Log.d("curpage, totalPages", "${curPage.value} ${totalPages.value}")
+            }
+        }else {
+            val startIndex = (page - 1) * 6
+            subList = if (page == totalPages.value) {
+                Log.d("curpage == totalPages", (drivingList.size % 6).toString())
+                drivingList.subList(startIndex, startIndex + drivingList.size % 6)
+            }else drivingList.subList(startIndex, startIndex + 6)
+
+            curPage.value = page
+
+            Log.d("curpage, totalPages", "${curPage.value} ${totalPages.value}")
+        }
+    }
+
+    // page를 새로 받아온다
+    fun getHistoryByPage(page: Int, onResponse: () -> Unit) {
         viewModelScope.launch {
             repository.getHistoryByPage(page).also {
                 when (it) {
                     is Resource.Success -> {
-                        drivingList = it.data ?: listOf()
+                        val startIndex = (page - 1) * 6
+                        drivingList = drivingList + (it.data ?: listOf())
+                        subList = drivingList.subList(startIndex, startIndex + (it.data?.size?: 0))
+                        onResponse()
                     }
                     is Resource.Error -> {
                         // 에러
