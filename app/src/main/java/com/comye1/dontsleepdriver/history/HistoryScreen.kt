@@ -25,13 +25,16 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.comye1.dontsleepdriver.data.model.Driving
+import com.comye1.dontsleepdriver.data.model.DrivingResponse
 import com.comye1.dontsleepdriver.ui.theme.DontSleepDriverTheme
 import com.comye1.dontsleepdriver.util.simpleDateFormat
 import java.util.*
 
 @Composable
-fun HistoryScreen(navigateBack: () -> Unit, viewModel: HistoryViewModel = hiltViewModel()) {
+fun HistoryScreen(
+    navigateBack: () -> Unit,
+    viewModel: HistoryViewModel = hiltViewModel()
+) {
 
     val navController = rememberNavController()
 
@@ -57,7 +60,12 @@ fun HistoryScreen(navigateBack: () -> Unit, viewModel: HistoryViewModel = hiltVi
             NavHost(navController = navController, startDestination = "history_main") {
                 composable("history_main") {
                     appBarTitle.value = "Driving History"
-                    HistoryMainScreen(viewModel.drivingList) { idx ->
+                    HistoryMainScreen(
+                        drivingResponseList = viewModel.drivingList,
+                        curPage = viewModel.curPage.value,
+                        totalPages = viewModel.totalPages.value,
+                        getPage = viewModel::getHistoryByPage
+                    ) { idx ->
                         navController.navigate("history_detail/${idx}")
                     }
                 }
@@ -69,8 +77,11 @@ fun HistoryScreen(navigateBack: () -> Unit, viewModel: HistoryViewModel = hiltVi
                     })
                 ) { backStackEntry ->
                     val index = backStackEntry.arguments?.getInt("index") ?: 0
+                    // index에 대항하는 아이템의 id를 통해 가져온다.
+                    val id = viewModel.drivingList[index].id
+                    viewModel.getDrivingItem(id)
                     appBarTitle.value = "Driving Detail"
-                    HistoryDetailScreen(viewModel.drivingList[index])
+                    HistoryDetailScreen(viewModel.selectedItem)
                 }
             }
 
@@ -80,12 +91,21 @@ fun HistoryScreen(navigateBack: () -> Unit, viewModel: HistoryViewModel = hiltVi
 }
 
 @Composable
-fun HistoryMainScreen(drivingList: List<Driving>, toDetail: (Int) -> Unit) {
+fun HistoryMainScreen(
+    drivingResponseList: List<DrivingResponse>,
+    curPage: Int,
+    totalPages: Int,
+    getPage: (Int) -> Unit,
+    toDetail: (Int) -> Unit
+) {
     Column(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.SpaceBetween
     ) {
-        drivingList.forEachIndexed { index, driving ->
+        Text(text = "list size : ${drivingResponseList.size}")
+        Text(text = "curPage : $curPage")
+        Text(text = "totalPages : $totalPages")
+        drivingResponseList.forEachIndexed { index, driving ->
             HistoryItem(item = driving) {
                 toDetail(index)
             }
@@ -93,7 +113,18 @@ fun HistoryMainScreen(drivingList: List<Driving>, toDetail: (Int) -> Unit) {
         /*
         2페이지 이상일 때만 버튼을 표시
          */
-        PageButton(1, 3, {}, {})
+//        if (totalPages > 0) {
+            PageButton(
+                currentPage = curPage,
+                totalPages = totalPages,
+                toPreviousPage = {
+                    getPage(curPage - 1)
+                },
+                toNextPage = {
+                    getPage(curPage + 1)
+                }
+            )
+//        }
     }
 }
 
@@ -105,7 +136,9 @@ fun PageButton(
     toNextPage: () -> Unit
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(16.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -129,7 +162,7 @@ fun PageButton(
 }
 
 @Composable
-fun HistoryItem(item: Driving, onClick: () -> Unit) {
+fun HistoryItem(item: DrivingResponse, onClick: () -> Unit) {
     Row(
         Modifier
             .fillMaxWidth()
@@ -142,9 +175,9 @@ fun HistoryItem(item: Driving, onClick: () -> Unit) {
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(text = simpleDateFormat.format(Date(item.startTime)))
+            Text(text = item.startTime)
             Text(text = " ~ ")
-            Text(text = simpleDateFormat.format(Date(item.endTime)))
+            Text(text = item.endTime)
         }
         Column(
             Modifier
@@ -154,7 +187,7 @@ fun HistoryItem(item: Driving, onClick: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(text = "Sleep Level")
-            Text(text = item.averageSleepLevel.toString())
+            Text(text = item.avgSleepLevel.toString())
         }
     }
 }
