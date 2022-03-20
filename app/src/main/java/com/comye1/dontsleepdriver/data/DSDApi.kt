@@ -1,10 +1,7 @@
 package com.comye1.dontsleepdriver.data
 
 import com.comye1.dontsleepdriver.data.model.*
-import retrofit2.http.Body
-import retrofit2.http.GET
-import retrofit2.http.HeaderMap
-import retrofit2.http.POST
+import retrofit2.http.*
 
 interface DSDApi {
     @POST("api/email")
@@ -46,4 +43,27 @@ interface DSDApi {
     suspend fun naverSignIn(
         @Body body: OAuthBody
     ): DSDResponse
+
+    @POST("api/driver/gpsData")
+    suspend fun postDriving(
+        @HeaderMap header: Map<String, String>,
+        @Body driving: DrivingBody
+    ): DSDResponse
+
+    @GET("api/driver/pages")
+    suspend fun getHistoryPages(
+        @HeaderMap header: Map<String, String>
+    ): PageResponse
+
+    @GET("api/driver/list/{page}")
+    suspend fun getHistoryByPage(
+        @HeaderMap header: Map<String, String>,
+        @Path("page") page: Int
+    ): HistoryResponse
+
+    @GET("api/driver/{id}")
+    suspend fun getHistoryItem(
+        @HeaderMap header: Map<String, String>,
+        @Path("id") id: Int
+    ): HistoryItemResponse
 }

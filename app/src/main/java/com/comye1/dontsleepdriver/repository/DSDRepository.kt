@@ -140,4 +140,41 @@ class DSDRepository @Inject constructor(
         saveToken(prefix = "Bearer", response.data.token)
         return Resource.Success(response)
     }
+
+    suspend fun getHistoryPages(): Resource<Int> {
+        val token = getSavedToken() ?: return Resource.Error("token does not exist")
+        val response = try {
+            api.getHistoryPages(token.toTokenMap())
+        } catch (e: Exception) {
+            Log.d("repo 7 exception", e.toString())
+            return Resource.Error(e.message ?: "")
+        }
+        Log.d("repo 7 success", response.data.toString())
+        return Resource.Success(response.data)
+    }
+
+    suspend fun getHistoryByPage(page: Int): Resource<List<DrivingResponse>> {
+        val token = getSavedToken() ?: return Resource.Error("token does not exist")
+        val response = try {
+            api.getHistoryByPage(token.toTokenMap(), page = page)
+        } catch (e: Exception) {
+            Log.d("repo 8 exception", e.toString())
+            return Resource.Error(e.message ?: "")
+        }
+        Log.d("repo 8 success", response.data.toString())
+        return Resource.Success(response.data)
+    }
+
+    suspend fun getDrivingItem(id: Int): Resource<DrivingResponse> {
+        Log.d("repo 9 id", id.toString())
+        val token = getSavedToken() ?: return Resource.Error("token does not exist")
+        val response = try {
+            api.getHistoryItem(token.toTokenMap(), id)
+        } catch (e: Exception) {
+            Log.d("repo 9 exception", e.toString())
+            return Resource.Error(e.message ?: "")
+        }
+        Log.d("repo 9 success", response.data.toString())
+        return Resource.Success(response.data)
+    }
 }
