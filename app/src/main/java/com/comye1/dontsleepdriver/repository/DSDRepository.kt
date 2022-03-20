@@ -56,7 +56,7 @@ class DSDRepository @Inject constructor(
             return Resource.Error(e.message ?: "")
         }
         Log.d("repo 4 token", response.data?.token!!)
-        saveToken(prefix = "Bearer",response.data?.token!!)
+        saveToken(prefix = "Bearer", response.data.token)
         return Resource.Success(response)
     }
 
@@ -113,6 +113,31 @@ class DSDRepository @Inject constructor(
             return Resource.Error(e.message ?: "")
         }
         Log.d("repo 5 success", response.data!!.email)
+        saveToken(prefix = "Bearer", response.data.token)
+        return Resource.Success(response)
+    }
+
+    suspend fun googleSignIn(idToken: String): Resource<DSDResponse>{
+        val response = try {
+            api.googleSignIn(OAuthBody(idToken))
+        } catch (e: Exception) {
+            Log.d("repo 6 exception", e.toString())
+            return Resource.Error(e.message ?: "")
+        }
+        Log.d("repo 5 success", response.data!!.email)
+        saveToken(prefix = "Bearer", response.data.token)
+        return Resource.Success(response)
+    }
+
+    suspend fun naverSignIn(accessToken: String): Resource<DSDResponse>{
+        val response = try {
+            api.naverSignIn(OAuthBody(accessToken))
+        } catch (e: Exception) {
+            Log.d("repo 6 exception", e.toString())
+            return Resource.Error(e.message ?: "")
+        }
+        Log.d("repo 5 success", response.data!!.email)
+        saveToken(prefix = "Bearer", response.data.token)
         return Resource.Success(response)
     }
 }

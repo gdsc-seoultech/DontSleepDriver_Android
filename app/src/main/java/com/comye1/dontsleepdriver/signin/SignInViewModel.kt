@@ -8,9 +8,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.comye1.dontsleepdriver.repository.DSDRepository
 import com.comye1.dontsleepdriver.util.Resource
-import com.google.firebase.auth.GoogleAuthProvider
-import com.google.firebase.auth.ktx.auth
-import com.google.firebase.ktx.Firebase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.receiveAsFlow
@@ -90,13 +87,40 @@ class SignInViewModel @Inject constructor(
         }
     }
 
-    fun googleSignIn(idToken: String) {
-        Log.d("signup google", idToken)
+    fun googleSignIn(idToken: String, onComplete: () -> Unit) {
+        viewModelScope.launch {
+            repository.googleSignIn(idToken = idToken).also {
+                when(it) {
+                    is Resource.Success -> {
+                        messageChannel.send(it.data?.data?.token?: "no token")
+                        Log.d("signup google", it.data?.message ?: "null")
+                        onComplete()
+                    }
+                    is Resource.Error -> {
+                        messageChannel.send("Sign In Failed")
+                        Log.d("signup google", it.data?.error ?: "null")
+                    }
+                }
+            }
+        }
     }
 
-    fun naverSignIn(accessToken: String) {
-        Log.d("signup naver", accessToken)
-    }
+    fun naverSignIn(accessToken: String, onComplete: () -> Unit) {
+        viewModelScope.launch {
+            repository.naverSignIn(accessToken = accessToken).also {
+                when(it) {
+                    is Resource.Success -> {
+                        messageChannel.send(it.data?.data?.token?: "no token")
+                        Log.d("signup naver", it.data?.message ?: "null")
+                        onComplete()
+                    }
+                    is Resource.Error -> {
+                        messageChannel.send("Sign In Failed")
+                        Log.d("signup naver", it.data?.error ?: "null")
+                    }
+                }
+            }
+        }    }
 
 }
 

@@ -36,4 +36,14 @@ interface DSDApi {
     suspend fun kakaoSignIn(
         @Body body: OAuthBody
     ): DSDResponse
+
+    @POST("api/auth/google")
+    suspend fun googleSignIn(
+        @Body body: OAuthBody
+    ): DSDResponse
+
+    @POST("api/auth/naver")
+    suspend fun naverSignIn(
+        @Body body: OAuthBody
+    ): DSDResponse
 }
