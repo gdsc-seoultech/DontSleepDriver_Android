@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.util.AttributeSet
 import android.util.Log
 import android.view.View
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
@@ -16,13 +17,19 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.ExitToApp
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.MusicNote
+import androidx.compose.material.icons.filled.PersonOutline
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -35,6 +42,7 @@ import com.comye1.dontsleepdriver.main.SoundDialog
 import com.comye1.dontsleepdriver.other.Constants.ACTION_PAUSE_SERVICE
 import com.comye1.dontsleepdriver.other.Constants.ACTION_SHOW_DSD_ACTIVITY
 import com.comye1.dontsleepdriver.other.Constants.ACTION_START_OR_RESUME_SERVICE
+import com.comye1.dontsleepdriver.other.Constants.ACTION_STOP_SERVICE
 import com.comye1.dontsleepdriver.service.TrackingService
 import com.comye1.dontsleepdriver.ui.theme.DontSleepDriverTheme
 import com.comye1.dontsleepdriver.ui.theme.Purple500
@@ -74,11 +82,6 @@ class DSDActivity : ComponentActivity() {
                     val user = viewModel.user.collectAsState()
 
                     val (soundDialogShown, showSoundDialog) = remember {
-                        mutableStateOf(false)
-                    }
-
-                    // 운전 시작, 정지 제어
-                    val (drivingState, setDrivingState) = remember {
                         mutableStateOf(false)
                     }
 
@@ -150,53 +153,77 @@ class DSDActivity : ComponentActivity() {
                                             }
                                         }
                                     },
-                                    floatingActionButton = {
-                                        FloatingActionButton(
-                                            onClick = {
-                                                if (viewModel.isTracking.value) {
-//                                                    setDrivingState(false)
-                                                    sendCommandToService(ACTION_PAUSE_SERVICE) // TrackingService 시작
-                                                } else {
-//                                                    setDrivingState(true)
-                                                    sendCommandToService(
-                                                        ACTION_START_OR_RESUME_SERVICE
-                                                    ) // TrackingService 시작
-                                                }
-                                            },
-                                            modifier = Modifier
-                                                .offset(y = 48.dp)
-                                                .size(108.dp),
-                                            backgroundColor = Color.Black,
-                                            contentColor = Color.White
-                                        ) {
-                                            if (viewModel.isTracking.value) {
-                                                Icon(
-                                                    imageVector = Icons.Default.Stop,
-                                                    contentDescription = "stop",
-                                                    Modifier.size(48.dp)
-                                                )
-                                            } else {
-                                                Icon(
-                                                    imageVector = Icons.Default.PlayArrow,
-                                                    contentDescription = "start",
-                                                    Modifier.size(48.dp)
-                                                )
-                                            }
-
-                                            Text(text = "drivingState : ${viewModel.isTracking.value}")
-                                        }
-                                    },
-                                    floatingActionButtonPosition = FabPosition.Center
                                 ) {
                                     Column(
                                         Modifier
                                             .fillMaxSize()
                                             .padding(16.dp)
                                     ) {
-                                        Text(text = "Main Screen")
-                                        Text(text = selectedSound.value.toString())
-                                        Text(text = viewModel.curTimeText.value)
-                                        CameraView()
+                                        if (viewModel.isSaved.value) {
+                                            Text(text = "gps : ${viewModel.gpsList.joinToString("\n")}")
+
+                                            Text(text = "eye : ${viewModel.sleepList.joinToString(" ")}")
+                                        }else {
+                                            if (!viewModel.isTracking.value){
+                                                Spacer(modifier = Modifier.height(100.dp))
+                                                Text(text = "Start Driving!", fontSize = 64.sp)
+                                            }
+                                            Spacer(modifier = Modifier.height(32.dp))
+                                            Text(
+                                                text = "Total Driving Time : ${viewModel.curTimeText.value}",
+                                                fontSize = 24.sp,
+                                                textAlign = TextAlign.Center
+                                            )
+                                            Box(
+                                                Modifier.fillMaxSize()
+                                            ) {
+                                                if (viewModel.isTracking.value)
+                                                    CameraView()
+                                                Row(
+                                                    Modifier
+                                                        .fillMaxSize()
+                                                        .padding(bottom = 100.dp),
+                                                    verticalAlignment = Alignment.Bottom,
+                                                    horizontalArrangement = Arrangement.SpaceAround
+                                                ) {
+                                                    Button(
+                                                        onClick = {
+                                                            sendCommandToService(
+                                                                ACTION_START_OR_RESUME_SERVICE
+                                                            )
+                                                        },
+                                                        enabled = !viewModel.isTracking.value
+                                                    ) {
+                                                        Text(text = "START", fontSize = 24.sp)
+                                                    }
+                                                    Button(
+                                                        onClick = {
+                                                            sendCommandToService(ACTION_PAUSE_SERVICE) // TrackingService 시작
+                                                        },
+                                                        enabled = viewModel.isTracking.value
+                                                    ) {
+                                                        Text(text = "STOP", fontSize = 24.sp)
+                                                    }
+                                                    Button(
+                                                        onClick = {
+                                                            if (viewModel.isTracking.value) {
+                                                                // 중지시킴
+                                                                sendCommandToService(
+                                                                    ACTION_PAUSE_SERVICE
+                                                                ) // TrackingService 시작
+                                                            }
+                                                            // 저장하기
+                                                            viewModel.saveDriving()
+                                                            // 서비스 종료하기
+                                                            sendCommandToService(ACTION_STOP_SERVICE)
+                                                        },
+                                                        enabled = curTimeInMillis != 0L
+                                                    ) {
+                                                        Text(text = "SAVE", fontSize = 24.sp)
+                                                    }
+                                                }
+                                            }
+                                        }
                                     }
                                     if (soundDialogShown) {
                                         SoundDialog(
@@ -238,11 +265,24 @@ class DSDActivity : ComponentActivity() {
             Log.d("isTracking", it.toString())
             setTrackingState(it)
         }
-        
+
         TrackingService.timeDrivingInMillis.observe(this) {
             curTimeInMillis = it
             val formattedTime = TrackingUtility.getFormattedStopWatchTime(curTimeInMillis)
             viewModel.updateTimeText(formattedTime)
+        }
+
+        TrackingService.previousLocation.observe(this) {
+            // 뷰모델의 리스트에 저장
+            if (it.latitude != -1.0)
+                viewModel.updateList(it, 0)
+        }
+
+        TrackingService.alwaysPermissionRequest.observe(this) {
+            if (it) {
+                Toast.makeText(this, "Allow Location permission all the time", Toast.LENGTH_SHORT)
+                    .show()
+            }
         }
 
     }

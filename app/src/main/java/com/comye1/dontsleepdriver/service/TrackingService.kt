@@ -4,23 +4,18 @@ import android.annotation.SuppressLint
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.NotificationManager.IMPORTANCE_LOW
-import android.app.PendingIntent
 import android.app.PendingIntent.FLAG_UPDATE_CURRENT
 import android.app.PendingIntent.getService
 import android.content.Context
 import android.content.Intent
-import android.location.Location
 import android.os.Build
 import android.os.Looper
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.Observer
-import com.comye1.dontsleepdriver.DSDActivity
 import com.comye1.dontsleepdriver.R
 import com.comye1.dontsleepdriver.other.Constants.ACTION_PAUSE_SERVICE
-import com.comye1.dontsleepdriver.other.Constants.ACTION_SHOW_DSD_ACTIVITY
 import com.comye1.dontsleepdriver.other.Constants.ACTION_START_OR_RESUME_SERVICE
 import com.comye1.dontsleepdriver.other.Constants.ACTION_STOP_SERVICE
 import com.comye1.dontsleepdriver.other.Constants.FASTEST_LOCATION_INTERVAL
@@ -33,6 +28,7 @@ import com.comye1.dontsleepdriver.util.TrackingUtility
 import com.comye1.dontsleepdriver.util.TrackingUtility.hasLocationPermissions
 import com.google.android.gms.location.*
 import com.google.android.gms.location.LocationRequest.PRIORITY_HIGH_ACCURACY
+import com.google.android.gms.maps.model.LatLng
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -46,8 +42,9 @@ class TrackingService : LifecycleService() {
     companion object {
         const val TAG = "TrackingService" // 로그 태그
         val isTracking = MutableLiveData<Boolean>() // tracking 상태
-        val previousLocation = MutableLiveData<Location>()
+        val previousLocation = MutableLiveData<LatLng>()
         val timeDrivingInMillis = MutableLiveData<Long>()
+        val alwaysPermissionRequest = MutableLiveData(false)
     }
 
     // 위치정보를 주기적으로 주는 Client
@@ -61,15 +58,19 @@ class TrackingService : LifecycleService() {
 
     var isFirstDriving = true // start or resume 판단
 
+    var serviceKilled = false
+
     private val timeDrivingInSeconds = MutableLiveData<Long>()
 
-//    private fun
+//    private val totalTimeInSeconds = MutableLiveData<Long>(0L)
 
     private fun postInitialValues() { // 초기값
         isTracking.postValue(false)
-        previousLocation.postValue(null)
+        previousLocation.postValue(LatLng(-1.0, 0.0))
         timeDrivingInSeconds.postValue(0L)
         timeDrivingInMillis.postValue(0L)
+        alwaysPermissionRequest.postValue(false)
+//        totalTimeInSeconds.postValue(0L)
     }
 
     private var isTimerEnabled = false
@@ -90,6 +91,7 @@ class TrackingService : LifecycleService() {
                 timeDrivingInMillis.postValue(timeDriving + labTime)
                 if (timeDrivingInMillis.value!! >= lastSecondTimestamp + 1000L) {
                     timeDrivingInSeconds.postValue(timeDrivingInSeconds.value!! + 1)
+//                    totalTimeInSeconds.postValue(totalTimeInSeconds.value!! + 1)
                     lastSecondTimestamp += 1000L
                 }
                 delay(TIMER_UPDATE_INTERVAL)
@@ -113,6 +115,7 @@ class TrackingService : LifecycleService() {
         fusedLocationProviderClient = FusedLocationProviderClient(this)
 
         isTracking.observe(this, {
+            Log.d(TAG, "isTracking $it")
             updateLocationTracking(it) // isTracking이 변화하면 위치 수집을 시작 or 중단
             updateNotificationTrackingState(it)
         })
@@ -139,6 +142,7 @@ class TrackingService : LifecycleService() {
                 }
                 ACTION_STOP_SERVICE -> {
                     Log.d(TAG, "stopped")
+                    killService()
                 }
                 else -> {
                 }
@@ -147,30 +151,42 @@ class TrackingService : LifecycleService() {
         return super.onStartCommand(intent, flags, startId)
     }
 
+    private fun killService() {
+        serviceKilled = true
+        isFirstDriving = true
+        pauseService()
+        postInitialValues()
+        stopForeground(true)
+        stopSelf()
+    }
+
     private fun updateNotificationTrackingState(isTracking: Boolean) {
         val notificationActionText = if (isTracking) "Pause" else "Resume"
         val pendingIntent = if (isTracking) {
             val pauseIntent = Intent(this, TrackingService::class.java).apply {
                 action = ACTION_PAUSE_SERVICE
             }
-            PendingIntent.getService(this, 1, pauseIntent, FLAG_UPDATE_CURRENT)
-        }else {
+            getService(this, 1, pauseIntent, FLAG_UPDATE_CURRENT)
+        } else {
             val resumeIntent = Intent(this, TrackingService::class.java).apply {
                 action = ACTION_START_OR_RESUME_SERVICE
             }
             getService(this, 2, resumeIntent, FLAG_UPDATE_CURRENT)
         }
 
-        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val notificationManager =
+            getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
         curNotificationBuilder.javaClass.getDeclaredField("mActions").apply {
             isAccessible = true
             set(curNotificationBuilder, ArrayList<NotificationCompat.Action>())
         }
 
-        curNotificationBuilder = baseNotificationBuilder
-            .addAction(R.drawable.pause, notificationActionText, pendingIntent)
-        notificationManager.notify(NOTIFICATION_ID, curNotificationBuilder.build())
+        if (!serviceKilled) {
+            curNotificationBuilder = baseNotificationBuilder
+                .addAction(R.drawable.pause, notificationActionText, pendingIntent)
+            notificationManager.notify(NOTIFICATION_ID, curNotificationBuilder.build())
+        }
     }
 
     // 위치 정보 주기적으로 받기 요청
@@ -190,6 +206,9 @@ class TrackingService : LifecycleService() {
                     Looper.getMainLooper()
                 )
                 Log.d(TAG, "request")
+            }else{
+                killService()
+                alwaysPermissionRequest.postValue(true)
             }
         } else {
             fusedLocationProviderClient.removeLocationUpdates(locationCallback)
@@ -197,35 +216,38 @@ class TrackingService : LifecycleService() {
     }
 
     // 위치 업데이트 콜백
-    val locationCallback = object : LocationCallback() {
+    private val locationCallback = object : LocationCallback() {
         override fun onLocationResult(result: LocationResult) {
             super.onLocationResult(result)
+            Log.d(TAG, "location : 왜안돼")
 
-//            Log.d(TAG, "result: $result") // 받아온 위치 정보
-            if (isTracking.value!!) {
-                result.locations.let { locations ->
-//                    for (i in 0..locations.size - 2) {
-//                        Log.d(TAG, "location : ${locations[i].latitude} ${locations[i].longitude}")
-//                        addPoint(locations[i])
-//                        Log.d(TAG, locations[i].distanceTo(locations[i + 1]).toString())
-//                    }
-                    for (location in locations) {
-                        Log.d(TAG, "location : ${location.latitude} ${location.longitude}")
-                    }
+            result.locations.let { locations ->
+                for (location in locations) {
+                    Log.d(TAG, "location : ${location.latitude} ${location.longitude}")
+
+                    previousLocation.postValue(
+                        LatLng(location.latitude, location.longitude)
+                    )
                 }
             }
+
+        }
+
+        override fun onLocationAvailability(p0: LocationAvailability) {
+            super.onLocationAvailability(p0)
+            Log.d(TAG, "availability : ${p0.isLocationAvailable}")
         }
     }
 
-    // 위치정보 어떻게 축적할지..
-    private fun addPoint(location: Location?) {
-        location?.let {
-            previousLocation.value?.apply {
-                // 거리, 속력 계산
-                previousLocation.postValue(it)
-            }
-        }
-    }
+//    // 위치정보 어떻게 축적할지..
+//    private fun addPoint(location: Location?) {
+//        location?.let {
+//            previousLocation.value?.apply {
+//                // 거리, 속력 계산
+//                previousLocation.postValue(it)
+//            }
+//        }
+//    }
 
     // Foreground Service 시작
     private fun startForegroundService() {
@@ -247,11 +269,18 @@ class TrackingService : LifecycleService() {
         // Foreground Service 시작
         startForeground(NOTIFICATION_ID, baseNotificationBuilder.build())
 
-        timeDrivingInSeconds.observe(this, Observer {
-            val notification = curNotificationBuilder
-                .setContentText(TrackingUtility.getFormattedStopWatchTime(it * 1000L))
-            notificationManager.notify(NOTIFICATION_ID, notification.build())
-        })
+        timeDrivingInSeconds.observe(this) {
+            if (!serviceKilled) {
+                val notification = curNotificationBuilder
+                    .setContentText(
+                        TrackingUtility.getFormattedStopWatchTime(it * 1000L)
+//                            TrackingUtility.getFormattedStopWatchTime(
+//                                totalTimeInSeconds.value!!.times(1000L)
+//                            )
+                    )
+                notificationManager.notify(NOTIFICATION_ID, notification.build())
+            }
+        }
     }
 
     // Notification Channel
