@@ -6,6 +6,7 @@ import android.app.NotificationManager
 import android.app.NotificationManager.IMPORTANCE_LOW
 import android.app.PendingIntent
 import android.app.PendingIntent.FLAG_UPDATE_CURRENT
+import android.app.PendingIntent.getService
 import android.content.Context
 import android.content.Intent
 import android.location.Location
@@ -15,6 +16,7 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.Observer
 import com.comye1.dontsleepdriver.DSDActivity
 import com.comye1.dontsleepdriver.R
 import com.comye1.dontsleepdriver.other.Constants.ACTION_PAUSE_SERVICE
@@ -27,14 +29,18 @@ import com.comye1.dontsleepdriver.other.Constants.NOTIFICATION_CHANNEL_ID
 import com.comye1.dontsleepdriver.other.Constants.NOTIFICATION_CHANNEL_NAME
 import com.comye1.dontsleepdriver.other.Constants.NOTIFICATION_ID
 import com.comye1.dontsleepdriver.other.Constants.TIMER_UPDATE_INTERVAL
+import com.comye1.dontsleepdriver.util.TrackingUtility
 import com.comye1.dontsleepdriver.util.TrackingUtility.hasLocationPermissions
 import com.google.android.gms.location.*
 import com.google.android.gms.location.LocationRequest.PRIORITY_HIGH_ACCURACY
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class TrackingService : LifecycleService() {
 
     companion object {
@@ -45,7 +51,13 @@ class TrackingService : LifecycleService() {
     }
 
     // 위치정보를 주기적으로 주는 Client
+    @Inject
     lateinit var fusedLocationProviderClient: FusedLocationProviderClient
+
+    @Inject
+    lateinit var baseNotificationBuilder: NotificationCompat.Builder
+
+    lateinit var curNotificationBuilder: NotificationCompat.Builder
 
     var isFirstDriving = true // start or resume 판단
 
@@ -88,6 +100,7 @@ class TrackingService : LifecycleService() {
 
 
     private fun pauseService() {
+        Log.d("tracking service", "paused")
         isTracking.postValue(false)
         isTimerEnabled = false
     }
@@ -95,11 +108,13 @@ class TrackingService : LifecycleService() {
     @SuppressLint("VisibleForTests")
     override fun onCreate() {
         super.onCreate()
+        curNotificationBuilder = baseNotificationBuilder
         postInitialValues()
         fusedLocationProviderClient = FusedLocationProviderClient(this)
 
         isTracking.observe(this, {
             updateLocationTracking(it) // isTracking이 변화하면 위치 수집을 시작 or 중단
+            updateNotificationTrackingState(it)
         })
     }
 
@@ -130,6 +145,32 @@ class TrackingService : LifecycleService() {
             }
         }
         return super.onStartCommand(intent, flags, startId)
+    }
+
+    private fun updateNotificationTrackingState(isTracking: Boolean) {
+        val notificationActionText = if (isTracking) "Pause" else "Resume"
+        val pendingIntent = if (isTracking) {
+            val pauseIntent = Intent(this, TrackingService::class.java).apply {
+                action = ACTION_PAUSE_SERVICE
+            }
+            PendingIntent.getService(this, 1, pauseIntent, FLAG_UPDATE_CURRENT)
+        }else {
+            val resumeIntent = Intent(this, TrackingService::class.java).apply {
+                action = ACTION_START_OR_RESUME_SERVICE
+            }
+            getService(this, 2, resumeIntent, FLAG_UPDATE_CURRENT)
+        }
+
+        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+        curNotificationBuilder.javaClass.getDeclaredField("mActions").apply {
+            isAccessible = true
+            set(curNotificationBuilder, ArrayList<NotificationCompat.Action>())
+        }
+
+        curNotificationBuilder = baseNotificationBuilder
+            .addAction(R.drawable.pause, notificationActionText, pendingIntent)
+        notificationManager.notify(NOTIFICATION_ID, curNotificationBuilder.build())
     }
 
     // 위치 정보 주기적으로 받기 요청
@@ -202,29 +243,16 @@ class TrackingService : LifecycleService() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             createNotificationChannel(notificationManager)
         }
-        val notificationBuilder = NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
-            .setAutoCancel(false) // active
-            .setOngoing(true) // not be swiped
-            .setSmallIcon(R.drawable.ic_google_icon)
-            .setContentTitle("Don't Sleep Driver!")
-            .setContentText("getting location & recording with camera")
-            .setContentIntent(getPendingIntent())
-        // pendingIntent => 알림을 클릭하면 액티비티를 열기 위해
-
 
         // Foreground Service 시작
-        startForeground(NOTIFICATION_ID, notificationBuilder.build())
-    }
+        startForeground(NOTIFICATION_ID, baseNotificationBuilder.build())
 
-    // Pending Intent를 가져옴
-    private fun getPendingIntent() = PendingIntent.getActivity(
-        this,
-        0,
-        Intent(this, DSDActivity::class.java).also {
-            it.action = ACTION_SHOW_DSD_ACTIVITY
-        },
-        FLAG_UPDATE_CURRENT
-    )
+        timeDrivingInSeconds.observe(this, Observer {
+            val notification = curNotificationBuilder
+                .setContentText(TrackingUtility.getFormattedStopWatchTime(it * 1000L))
+            notificationManager.notify(NOTIFICATION_ID, notification.build())
+        })
+    }
 
     // Notification Channel
     private fun createNotificationChannel(notificationManager: NotificationManager) {

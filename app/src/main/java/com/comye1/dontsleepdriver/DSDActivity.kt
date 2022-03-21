@@ -24,7 +24,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import androidx.lifecycle.Observer
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -33,6 +32,7 @@ import com.comye1.dontsleepdriver.main.AccountBottomSheetContent
 import com.comye1.dontsleepdriver.main.CameraView
 import com.comye1.dontsleepdriver.main.MainViewModel
 import com.comye1.dontsleepdriver.main.SoundDialog
+import com.comye1.dontsleepdriver.other.Constants.ACTION_PAUSE_SERVICE
 import com.comye1.dontsleepdriver.other.Constants.ACTION_SHOW_DSD_ACTIVITY
 import com.comye1.dontsleepdriver.other.Constants.ACTION_START_OR_RESUME_SERVICE
 import com.comye1.dontsleepdriver.service.TrackingService
@@ -49,7 +49,7 @@ class DSDActivity : ComponentActivity() {
     private var curTimeInMillis = 0L
 
     override fun onCreateView(name: String, context: Context, attrs: AttributeSet): View? {
-        subscribeToObservers()
+        subscribeToObservers(viewModel::setTrackingState)
         return super.onCreateView(name, context, attrs)
     }
 
@@ -60,11 +60,12 @@ class DSDActivity : ComponentActivity() {
 
             val navController = rememberNavController()
 
-            NavHost(navController = navController, startDestination = "dsd_main"){
-                composable("dsd_history"){
+
+            NavHost(navController = navController, startDestination = "dsd_main") {
+                composable("dsd_history") {
                     HistoryScreen({ navController.popBackStack() })
                 }
-                composable("dsd_main"){
+                composable("dsd_main") {
                     val (exitDialogShown, showExitDialog) = remember {
                         mutableStateOf(false)
                     }
@@ -95,7 +96,7 @@ class DSDActivity : ComponentActivity() {
                     if (intent.action == ACTION_SHOW_DSD_ACTIVITY) {
                         Log.d("Tracking", "Pending Intent")
                         scope.launch {
-                            setDrivingState(true) // 버튼 상태 변경
+//                            setDrivingState(true) // 버튼 상태 변경
                             // 추후 notification에서의 동작으로 정지, 중지 시키면 판단 필요..
                         }
                     }
@@ -152,11 +153,14 @@ class DSDActivity : ComponentActivity() {
                                     floatingActionButton = {
                                         FloatingActionButton(
                                             onClick = {
-                                                if (drivingState) {
-                                                    setDrivingState(false)
+                                                if (viewModel.isTracking.value) {
+//                                                    setDrivingState(false)
+                                                    sendCommandToService(ACTION_PAUSE_SERVICE) // TrackingService 시작
                                                 } else {
-                                                    setDrivingState(true)
-                                                    sendCommandToService(ACTION_START_OR_RESUME_SERVICE) // TrackingService 시작
+//                                                    setDrivingState(true)
+                                                    sendCommandToService(
+                                                        ACTION_START_OR_RESUME_SERVICE
+                                                    ) // TrackingService 시작
                                                 }
                                             },
                                             modifier = Modifier
@@ -165,7 +169,7 @@ class DSDActivity : ComponentActivity() {
                                             backgroundColor = Color.Black,
                                             contentColor = Color.White
                                         ) {
-                                            if (drivingState) {
+                                            if (viewModel.isTracking.value) {
                                                 Icon(
                                                     imageVector = Icons.Default.Stop,
                                                     contentDescription = "stop",
@@ -178,6 +182,8 @@ class DSDActivity : ComponentActivity() {
                                                     Modifier.size(48.dp)
                                                 )
                                             }
+
+                                            Text(text = "drivingState : ${viewModel.isTracking.value}")
                                         }
                                     },
                                     floatingActionButtonPosition = FabPosition.Center
@@ -226,12 +232,18 @@ class DSDActivity : ComponentActivity() {
         }
     }
 
-    private fun subscribeToObservers(){
-        TrackingService.timeDrivingInMillis.observe(this, Observer {
+    private fun subscribeToObservers(setTrackingState: (Boolean) -> Unit) {
+
+        TrackingService.isTracking.observe(this) {
+            Log.d("isTracking", it.toString())
+            setTrackingState(it)
+        }
+        
+        TrackingService.timeDrivingInMillis.observe(this) {
             curTimeInMillis = it
             val formattedTime = TrackingUtility.getFormattedStopWatchTime(curTimeInMillis)
             viewModel.updateTimeText(formattedTime)
-        })
+        }
 
     }
 
