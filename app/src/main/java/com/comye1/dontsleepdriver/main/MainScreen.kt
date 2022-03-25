@@ -23,7 +23,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.comye1.dontsleepdriver.R
 import com.comye1.dontsleepdriver.data.model.LocalUser
-import com.comye1.dontsleepdriver.ui.theme.Purple500
 
 @Composable
 fun SoundDialog(
@@ -34,8 +33,14 @@ fun SoundDialog(
     val context = LocalContext.current
 
     val soundList = listOf(
-        Pair("rooster", R.raw.rooster),
-        Pair("rooster-morning", R.raw.rooster_morning)
+        Pair("Alarm Tone", R.raw.sound_alarm_tone),
+        Pair("Beep Sound", R.raw.sound_beep),
+        Pair("Bicycle Bell", R.raw.sound_bicycle),
+        Pair("Church Bell", R.raw.sound_church_bell),
+        Pair("Emergency", R.raw.sound_emergency),
+        Pair("Intruder Alert", R.raw.sound_intruder),
+        Pair("Wake Up", R.raw.sound_wake_up),
+        Pair("Rooster", R.raw.rooster),
     )
 
     val selectedItem = remember {
@@ -50,7 +55,7 @@ fun SoundDialog(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .fillMaxSize(.7f)
+                .fillMaxSize(.8f)
                 .clip(RoundedCornerShape(8.dp))
                 .background(Color.White)
         ) {
@@ -83,7 +88,7 @@ fun SoundDialog(
                         onDismiss()
                         mpStop.value = true
                     },
-                    color = Purple500
+                    color = Color.Red
                 )
                 Spacer(modifier = Modifier.width(32.dp))
                 Text(
@@ -93,7 +98,7 @@ fun SoundDialog(
                         mpStop.value = true
                         onOK(selectedItem.value) // 선택된 음악으로 설정
                     },
-                    color = Purple500
+                    color = Color.Red
                 )
                 Spacer(modifier = Modifier.width(16.dp))
             }
@@ -113,17 +118,15 @@ fun SoundsRadioGroup(
         mutableStateOf(MediaPlayer.create(context, selectedItem.value))
     }
 
-    LazyColumn {
-        items(list) {
-            SoundRadioRow(soundName = it.first, selected = it.second == selectedItem.value) {
-                if (selectedItem.value != it.second) {
-                    selectedItem.value = it.second
-                    player.value.stop()
-                    player.value = MediaPlayer.create(context, it.second)
-                    player.value.start()
-                } else {
-                    player.value.start()
-                }
+    list.forEach {
+        SoundRadioRow(soundName = it.first, selected = it.second == selectedItem.value) {
+            if (selectedItem.value != it.second) {
+                selectedItem.value = it.second
+                player.value.stop()
+                player.value = MediaPlayer.create(context, it.second)
+                player.value.start()
+            } else {
+                player.value.start()
             }
         }
     }
@@ -146,7 +149,7 @@ fun SoundRadioRow(
             enabled = false,
             onClick = {},
             colors = RadioButtonDefaults.colors(
-                disabledColor = Purple500
+                disabledColor = Color.Red
             )
         )
         Spacer(modifier = Modifier.width(32.dp))
