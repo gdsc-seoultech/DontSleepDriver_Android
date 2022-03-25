@@ -26,6 +26,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -44,8 +45,8 @@ import com.comye1.dontsleepdriver.other.Constants.ACTION_SHOW_DSD_ACTIVITY
 import com.comye1.dontsleepdriver.other.Constants.ACTION_START_OR_RESUME_SERVICE
 import com.comye1.dontsleepdriver.other.Constants.ACTION_STOP_SERVICE
 import com.comye1.dontsleepdriver.service.TrackingService
+import com.comye1.dontsleepdriver.ui.theme.Black
 import com.comye1.dontsleepdriver.ui.theme.DontSleepDriverTheme
-import com.comye1.dontsleepdriver.ui.theme.Purple500
 import com.comye1.dontsleepdriver.util.TrackingUtility
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -65,6 +66,8 @@ class DSDActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
+
+            window.statusBarColor = Black.toArgb()
 
             val navController = rememberNavController()
 
@@ -163,8 +166,8 @@ class DSDActivity : ComponentActivity() {
                                             Text(text = "gps : ${viewModel.gpsList.joinToString("\n")}")
 
                                             Text(text = "eye : ${viewModel.sleepList.joinToString(" ")}")
-                                        }else {
-                                            if (!viewModel.isTracking.value){
+                                        } else {
+                                            if (!viewModel.isTracking.value) {
                                                 Spacer(modifier = Modifier.height(100.dp))
                                                 Text(text = "Start Driving!", fontSize = 64.sp)
                                             }
@@ -198,7 +201,9 @@ class DSDActivity : ComponentActivity() {
                                                     }
                                                     Button(
                                                         onClick = {
-                                                            sendCommandToService(ACTION_PAUSE_SERVICE) // TrackingService 시작
+                                                            sendCommandToService(
+                                                                ACTION_PAUSE_SERVICE
+                                                            ) // TrackingService 시작
                                                         },
                                                         enabled = viewModel.isTracking.value
                                                     ) {
@@ -324,7 +329,7 @@ fun ExitDialog(onDismiss: () -> Unit, onYes: () -> Unit) {
                             onDismiss()
                         }
                         .padding(8.dp),
-                    color = Purple500, style = MaterialTheme.typography.h6
+                    color = Color.Red, style = MaterialTheme.typography.h6
                 )
                 Spacer(modifier = Modifier.width(32.dp))
                 Text(
@@ -334,7 +339,7 @@ fun ExitDialog(onDismiss: () -> Unit, onYes: () -> Unit) {
                             onYes()
                         }
                         .padding(8.dp),
-                    color = Purple500, style = MaterialTheme.typography.h6
+                    color = Color.Red, style = MaterialTheme.typography.h6
                 )
                 Spacer(modifier = Modifier.width(16.dp))
             }
