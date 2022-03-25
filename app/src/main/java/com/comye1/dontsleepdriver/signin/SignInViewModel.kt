@@ -74,7 +74,8 @@ class SignInViewModel @Inject constructor(
             repository.kakaoSignIn(accessToken = accessToken).also {
                 when(it) {
                     is Resource.Success -> {
-                        messageChannel.send(it.data?.data?.token?: "no token")
+                        messageChannel.send("success!")
+//                        messageChannel.send(it.data?.data?.token?: "no token")
                         Log.d("signup kakao", it.data?.message ?: "null")
                         onComplete()
                     }
@@ -92,7 +93,8 @@ class SignInViewModel @Inject constructor(
             repository.googleSignIn(idToken = idToken).also {
                 when(it) {
                     is Resource.Success -> {
-                        messageChannel.send(it.data?.data?.token?: "no token")
+                        messageChannel.send("success!")
+//                        messageChannel.send(it.data?.data?.token?: "no token")
                         Log.d("signup google", it.data?.message ?: "null")
                         onComplete()
                     }
@@ -110,7 +112,8 @@ class SignInViewModel @Inject constructor(
             repository.naverSignIn(accessToken = accessToken).also {
                 when(it) {
                     is Resource.Success -> {
-                        messageChannel.send(it.data?.data?.token?: "no token")
+                        messageChannel.send("success!")
+//                        messageChannel.send(it.data?.data?.token?: "no token")
                         Log.d("signup naver", it.data?.message ?: "null")
                         onComplete()
                     }

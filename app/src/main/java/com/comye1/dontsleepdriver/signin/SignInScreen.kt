@@ -56,10 +56,11 @@ fun SignInScreen(
             try {
                 val account = task.getResult(ApiException::class.java)!!
                 scope.launch {
-                    account.idToken?.let {
+                    account.idToken?.let { token ->
                         Log.d("google", "${account.email} ${account.displayName}")
-                        viewModel.googleSignIn(it)
-                        toMain()
+                        viewModel.googleSignIn(token) {
+                            toMain()
+                        }
                     }
                 }
             } catch (e: ApiException) {
@@ -153,8 +154,9 @@ fun SignInScreen(
                     override fun onSuccess() {
                         NaverIdLoginSDK.getAccessToken()?.let {
                             Log.d("naver", "success")
-                            viewModel.naverSignIn(it)
-                            toMain()
+                            viewModel.naverSignIn(it){
+                                toMain()
+                            }
                         } ?: viewModel.oAuthFailed()
                     }
 
