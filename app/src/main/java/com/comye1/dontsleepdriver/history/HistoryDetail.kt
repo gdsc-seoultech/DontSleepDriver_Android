@@ -13,6 +13,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.comye1.dontsleepdriver.data.model.DrivingResponse
+import com.comye1.dontsleepdriver.util.getColorByLevel
 import com.comye1.dontsleepdriver.util.secondToHMS
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.LatLng
@@ -53,24 +54,14 @@ fun HistoryDetailScreen(drivingResponse: DrivingResponse?) {
                 with(locationList) {
                     for (i in 1 until this.size) {
                         val sleepLevel = drivingResponse.gpsLevel[i]
-                        if (sleepLevel == -1) { // 중단된 상태 -> 포함 X
 
-                        } else {
-                            latLngBounds.include(this[i]) // 포함
-                            Polyline( // 경로 그리기
-                                points = this.subList(i - 1, i + 1),
-                                color = when (sleepLevel) { // 졸음 정도에 따라 색을 다르게
-                                    4 -> Color.Red
-                                    3 -> Color.Magenta
-                                    2 -> Color.Yellow
-                                    1 -> Color.Green
-                                    0 -> Color.Blue
-
-                                    else -> Color.Gray
-                                }
-                            )
-                        }
+                        latLngBounds.include(this[i]) // 포함
+                        Polyline( // 경로 그리기
+                            points = this.subList(i - 1, i + 1),
+                            color = getColorByLevel(sleepLevel)
+                        )
                     }
+
                 }
 
                 cameraPositionState.move(
