@@ -10,7 +10,6 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.NavigateBefore
 import androidx.compose.material.icons.filled.NavigateNext
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -145,7 +144,10 @@ fun PageButton(
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        IconButton(onClick = { if (currentPage > 1) toPreviousPage() }, enabled = currentPage in 2..totalPages) {
+        IconButton(
+            onClick = { if (currentPage > 1) toPreviousPage() },
+            enabled = currentPage in 2..totalPages
+        ) {
             Icon(
                 imageVector = Icons.Default.NavigateBefore, contentDescription = "previous page",
                 modifier = Modifier.size(32.dp)
@@ -154,7 +156,10 @@ fun PageButton(
         Spacer(modifier = Modifier.width(16.dp))
         Text(text = "$currentPage / $totalPages", fontSize = dpToSp(dp = 16.dp))
         Spacer(modifier = Modifier.width(16.dp))
-        IconButton(onClick = { if (currentPage <= totalPages) toNextPage() }, enabled = currentPage < totalPages) {
+        IconButton(
+            onClick = { if (currentPage <= totalPages) toNextPage() },
+            enabled = currentPage < totalPages
+        ) {
             Icon(
                 imageVector = Icons.Default.NavigateNext,
                 contentDescription = "next page",
@@ -190,7 +195,7 @@ fun HistoryItem(item: DrivingResponse, onClick: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(text = "Sleep Level")
-            Text(text = item.avgSleepLevel.toString())
+            Text(text = "%.1f".format(item.avgSleepLevel))
         }
     }
 }

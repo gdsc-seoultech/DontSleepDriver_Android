@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.dp
 import com.comye1.dontsleepdriver.data.model.DrivingResponse
 import com.comye1.dontsleepdriver.util.secondToHMS
 import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.Marker
@@ -31,8 +32,9 @@ fun HistoryDetailScreen(drivingResponse: DrivingResponse?) {
                 .fillMaxWidth()
                 .padding(16.dp)
         ) {
-            val startPoint = drivingResponse.gpsData.first()
-            val endPoint = drivingResponse.gpsData.last()
+            val locationList = drivingResponse.gpsData.map { LatLng(it.lat, it.lng) }
+            val startPoint = locationList.first()
+            val endPoint = locationList.last()
             val cameraPositionState = rememberCameraPositionState()
 
             GoogleMap(
@@ -48,7 +50,7 @@ fun HistoryDetailScreen(drivingResponse: DrivingResponse?) {
                  */
                 val latLngBounds = LatLngBounds.Builder() // 지도가 보이는 범위
                 latLngBounds.include(startPoint)
-                with(drivingResponse.gpsData) {
+                with(locationList) {
                     for (i in 1 until this.size) {
                         val sleepLevel = drivingResponse.gpsLevel[i]
                         if (sleepLevel == -1) { // 중단된 상태 -> 포함 X
@@ -89,19 +91,15 @@ fun HistoryDetailScreen(drivingResponse: DrivingResponse?) {
                     snippet = "Marker in end point"
                 )
             }
-            HistoryTitleText(text = "Driving started at")
+            HistoryTitleText(text = "Starting Time")
             HistoryContentText(text = drivingResponse.startTime)
-            HistoryTitleText(text = "Driving ended at")
+            HistoryTitleText(text = "Ending Time")
             HistoryContentText(text = drivingResponse.endTime)
             HistoryTitleText(text = "Total driving time")
             HistoryContentText(text = secondToHMS(drivingResponse.totalTime))
-            drivingResponse.subDrivingList.let {
-                /*
-                TODO 부분적인 운전/휴식 시간을 계산해서 리스트로 보여주자!
-                 */
-            }
+
             HistoryTitleText(text = "Average sleep level")
-            HistoryContentText(text = drivingResponse.avgSleepLevel.toString())
+            HistoryContentText(text = "%.1f".format(drivingResponse.avgSleepLevel))
         }
     }
 
