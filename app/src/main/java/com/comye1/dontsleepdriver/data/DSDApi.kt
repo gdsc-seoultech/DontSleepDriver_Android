@@ -48,7 +48,7 @@ interface DSDApi {
     suspend fun postDriving(
         @HeaderMap header: Map<String, String>,
         @Body driving: DrivingBody
-    ): DSDResponse
+    ): DrivingPostResponse
 
     @GET("api/driver/pages")
     suspend fun getHistoryPages(

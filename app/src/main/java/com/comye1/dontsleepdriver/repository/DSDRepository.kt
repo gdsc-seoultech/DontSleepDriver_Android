@@ -177,4 +177,19 @@ class DSDRepository @Inject constructor(
         Log.d("repo 9 success", response.data.toString())
         return Resource.Success(response.data)
     }
+
+    suspend fun postDrivingItem(driving: DrivingBody): Resource<DrivingResponse> {
+        val token = getSavedToken() ?: return Resource.Error("token does not exist")
+        val response = try {
+            api.postDriving(token.toTokenMap(), driving)
+        } catch (e: Exception) {
+            Log.d("repo 9 exception", e.toString())
+            return Resource.Error(e.message ?: "")
+        }
+        Log.d("repo 9 success", response.data.toString())
+        response.data?.let {
+            return Resource.Success(it)
+        }
+        return Resource.Error("data null")
+    }
 }
