@@ -7,7 +7,12 @@ import androidx.core.content.edit
 import com.comye1.dontsleepdriver.data.DSDApi
 import com.comye1.dontsleepdriver.data.model.*
 import com.comye1.dontsleepdriver.util.Resource
+import com.google.gson.Gson
+import com.google.gson.GsonBuilder
 import dagger.hilt.android.scopes.ActivityScoped
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 import javax.inject.Inject
 
 @ActivityScoped
@@ -178,15 +183,18 @@ class DSDRepository @Inject constructor(
         return Resource.Success(response.data)
     }
 
-    suspend fun postDrivingItem(driving: DrivingBody): Resource<DrivingResponse> {
+    suspend fun postDrivingItem(driving: DrivingBody): Resource<DrivingData> {
         val token = getSavedToken() ?: return Resource.Error("token does not exist")
+
+        Log.d("postDrivingItem","repository")
+
         val response = try {
             api.postDriving(token.toTokenMap(), driving)
         } catch (e: Exception) {
-            Log.d("repo 9 exception", e.toString())
-            return Resource.Error(e.message ?: "")
+            Log.d("repo 10 exception", e.localizedMessage?: "")
+            return Resource.Error(e.toString())
         }
-        Log.d("repo 9 success", response.data.toString())
+        Log.d("repo 10 success", response.data.toString())
         response.data?.let {
             return Resource.Success(it)
         }

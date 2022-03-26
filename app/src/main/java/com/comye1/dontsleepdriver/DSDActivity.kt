@@ -35,6 +35,8 @@ import androidx.compose.ui.window.Dialog
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.comye1.dontsleepdriver.data.model.DrivingResponse
+import com.comye1.dontsleepdriver.history.HistoryDetailScreen
 import com.comye1.dontsleepdriver.history.HistoryScreen
 import com.comye1.dontsleepdriver.main.AccountBottomSheetContent
 import com.comye1.dontsleepdriver.main.CameraView
@@ -76,6 +78,11 @@ class DSDActivity : ComponentActivity() {
                 composable("dsd_history") {
                     HistoryScreen({ navController.popBackStack() })
                 }
+
+                composable("dsd_result"){
+                    ResultScreen({navController.popBackStack()}, viewModel.drivingResult)
+                }
+
                 composable("dsd_main") {
                     val (exitDialogShown, showExitDialog) = remember {
                         mutableStateOf(false)
@@ -108,139 +115,160 @@ class DSDActivity : ComponentActivity() {
                     }
 
                     DontSleepDriverTheme {
-                        // A surface container using the 'background' color from the theme
-                        Surface(color = MaterialTheme.colors.background) {
 
-                            ModalBottomSheetLayout(
-                                sheetContent = {
-                                    AccountBottomSheetContent(user.value) {
-                                        scope.launch {
-                                            modalBottomSheetState.hide()
+                        ModalBottomSheetLayout(
+                            sheetContent = {
+                                AccountBottomSheetContent(user.value) {
+                                    scope.launch {
+                                        modalBottomSheetState.hide()
+                                    }
+                                }
+                            },
+                            sheetState = modalBottomSheetState,
+                            sheetShape = RoundedCornerShape(8.dp, 8.dp, 0.dp, 0.dp)
+                        ) {
+                            Scaffold(
+                                bottomBar = {
+                                    BottomAppBar {
+                                        IconButton(
+                                            onClick = { showExitDialog(true) },
+                                            enabled = !viewModel.isTracking.value
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.ExitToApp,
+                                                contentDescription = "Exit this app"
+                                            )
+                                        }
+                                        Spacer(modifier = Modifier.weight(1f))
+                                        IconButton(
+                                            onClick = { navController.navigate("dsd_history") },
+                                            enabled = !viewModel.isTracking.value
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.History,
+                                                contentDescription = "Driving History"
+                                            )
+                                        }
+                                        IconButton(
+                                            onClick = { showSoundDialog(true) },
+                                            enabled = !viewModel.isTracking.value
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.MusicNote,
+                                                contentDescription = "Ring Tone"
+                                            )
+                                        }
+                                        IconButton(onClick = {
+                                            scope.launch {
+                                                modalBottomSheetState.show()
+                                            }
+                                        }, enabled = !viewModel.isTracking.value) {
+                                            Icon(
+                                                imageVector = Icons.Default.PersonOutline,
+                                                contentDescription = "Account"
+                                            )
                                         }
                                     }
                                 },
-                                sheetState = modalBottomSheetState,
-                                sheetShape = RoundedCornerShape(8.dp, 8.dp, 0.dp, 0.dp)
                             ) {
-                                Scaffold(
-                                    bottomBar = {
-                                        BottomAppBar {
-                                            IconButton(onClick = { showExitDialog(true) }) {
-                                                Icon(
-                                                    imageVector = Icons.Default.ExitToApp,
-                                                    contentDescription = "Exit this app"
-                                                )
+                                Column(
+                                    Modifier
+                                        .fillMaxSize()
+                                        .background(
+                                            when (viewModel.warningLevel) {
+                                                0 -> Color.White
+                                                1 -> Color.Yellow
+                                                3 -> Color.Red
+                                                else -> Color.Red
                                             }
-                                            Spacer(modifier = Modifier.weight(1f))
-                                            IconButton(onClick = { navController.navigate("dsd_history") }) {
-                                                Icon(
-                                                    imageVector = Icons.Default.History,
-                                                    contentDescription = "Driving History"
-                                                )
-                                            }
-                                            IconButton(onClick = { showSoundDialog(true) }) {
-                                                Icon(
-                                                    imageVector = Icons.Default.MusicNote,
-                                                    contentDescription = "Ring Tone"
-                                                )
-                                            }
-                                            IconButton(onClick = {
-                                                scope.launch {
-                                                    modalBottomSheetState.show()
-                                                }
-                                            }) {
-                                                Icon(
-                                                    imageVector = Icons.Default.PersonOutline,
-                                                    contentDescription = "Account"
-                                                )
-                                            }
-                                        }
-                                    },
+                                        )
+                                        .padding(16.dp)
                                 ) {
-                                    Column(
-                                        Modifier
-                                            .fillMaxSize()
-                                            .padding(16.dp)
-                                    ) {
-                                        if (viewModel.isSaved.value) {
-                                            Text(text = "gps : ${viewModel.gpsList.joinToString("\n")}")
+                                    if (viewModel.isSaved.value) {
+                                        Text(text = "gps : ${viewModel.gpsList.joinToString("\n")}")
 
-                                            Text(text = "eye : ${viewModel.sleepList.joinToString(" ")}")
-                                        } else {
-                                            if (!viewModel.isTracking.value) {
-                                                Spacer(modifier = Modifier.height(100.dp))
-                                                Text(text = "Start Driving!", fontSize = 64.sp)
-                                            }
-                                            Spacer(modifier = Modifier.height(32.dp))
-                                            Text(
-                                                text = "Total Driving Time : ${viewModel.curTimeText.value}",
-                                                fontSize = 24.sp,
-                                                textAlign = TextAlign.Center
-                                            )
-                                            Box(
-                                                Modifier.fillMaxSize()
+                                        Text(text = "eye : ${viewModel.sleepList.joinToString(" ")}")
+                                        
+                                        Text(text = "time: ${curTimeInMillis / 1000}")
+                                        
+                                    } else {
+                                        if (!viewModel.isTracking.value) {
+                                            Spacer(modifier = Modifier.height(100.dp))
+                                            Text(text = "Start Driving!", fontSize = 64.sp)
+                                        }
+                                        Spacer(modifier = Modifier.height(32.dp))
+                                        Text(
+                                            text = "Total Driving Time : ${viewModel.curTimeText.value}",
+                                            fontSize = 24.sp,
+                                            textAlign = TextAlign.Center
+                                        )
+                                        Box(
+                                            Modifier.fillMaxSize()
+                                        ) {
+                                            if (viewModel.isTracking.value)
+                                                CameraView(viewModel::addEyeState)
+                                            Row(
+                                                Modifier
+                                                    .fillMaxSize()
+                                                    .padding(bottom = 100.dp),
+                                                verticalAlignment = Alignment.Bottom,
+                                                horizontalArrangement = Arrangement.SpaceAround
                                             ) {
-                                                if (viewModel.isTracking.value)
-                                                    CameraView()
-                                                Row(
-                                                    Modifier
-                                                        .fillMaxSize()
-                                                        .padding(bottom = 100.dp),
-                                                    verticalAlignment = Alignment.Bottom,
-                                                    horizontalArrangement = Arrangement.SpaceAround
+                                                Button(
+                                                    onClick = {
+                                                        sendCommandToService(
+                                                            ACTION_START_OR_RESUME_SERVICE
+                                                        )
+                                                    },
+                                                    enabled = !viewModel.isTracking.value
                                                 ) {
-                                                    Button(
-                                                        onClick = {
-                                                            sendCommandToService(
-                                                                ACTION_START_OR_RESUME_SERVICE
-                                                            )
-                                                        },
-                                                        enabled = !viewModel.isTracking.value
-                                                    ) {
-                                                        Text(text = "START", fontSize = 24.sp)
-                                                    }
-                                                    Button(
-                                                        onClick = {
+                                                    Text(text = "START", fontSize = 24.sp)
+                                                }
+                                                Button(
+                                                    onClick = {
+                                                        sendCommandToService(
+                                                            ACTION_PAUSE_SERVICE
+                                                        ) // TrackingService 시작
+                                                    },
+                                                    enabled = viewModel.isTracking.value
+                                                ) {
+                                                    Text(text = "STOP", fontSize = 24.sp)
+                                                }
+                                                Button(
+                                                    onClick = {
+                                                        if (viewModel.isTracking.value) {
+                                                            // 중지시킴
                                                             sendCommandToService(
                                                                 ACTION_PAUSE_SERVICE
                                                             ) // TrackingService 시작
-                                                        },
-                                                        enabled = viewModel.isTracking.value
-                                                    ) {
-                                                        Text(text = "STOP", fontSize = 24.sp)
-                                                    }
-                                                    Button(
-                                                        onClick = {
-                                                            if (viewModel.isTracking.value) {
-                                                                // 중지시킴
-                                                                sendCommandToService(
-                                                                    ACTION_PAUSE_SERVICE
-                                                                ) // TrackingService 시작
-                                                            }
-                                                            // 저장하기
-                                                            viewModel.saveDriving()
-                                                            // 서비스 종료하기
-                                                            sendCommandToService(ACTION_STOP_SERVICE)
-                                                        },
-                                                        enabled = curTimeInMillis != 0L
-                                                    ) {
-                                                        Text(text = "SAVE", fontSize = 24.sp)
-                                                    }
+                                                        }
+                                                        // 저장하기
+                                                        Log.d("repo repo", "save driving")
+                                                        viewModel.saveDriving(curTimeInMillis)
+                                                        // 서비스 종료하기
+                                                        sendCommandToService(ACTION_STOP_SERVICE)
+                                                    },
+                                                    enabled = curTimeInMillis != 0L
+                                                ) {
+                                                    Text(text = "SAVE", fontSize = 24.sp)
                                                 }
                                             }
                                         }
                                     }
-                                    if (soundDialogShown) {
-                                        SoundDialog(
-                                            onDismiss = { showSoundDialog(false) },
-                                            onOK = {
-                                                selectedSound.value = it
-                                                // 뷰모델 통해 repository에 저장
-                                                viewModel.saveSound(it)
-                                            },
-                                            selected = selectedSound.value
-                                        )
-                                    }
+                                }
+                                when(viewModel.warningLevel){
+
+                                }
+                                if (soundDialogShown) {
+                                    SoundDialog(
+                                        onDismiss = { showSoundDialog(false) },
+                                        onOK = {
+                                            selectedSound.value = it
+                                            // 뷰모델 통해 repository에 저장
+                                            viewModel.saveSound(it)
+                                        },
+                                        selected = selectedSound.value
+                                    )
                                 }
                             }
                         }
@@ -280,7 +308,7 @@ class DSDActivity : ComponentActivity() {
         TrackingService.previousLocation.observe(this) {
             // 뷰모델의 리스트에 저장
             if (it.latitude != -1.0)
-                viewModel.updateList(it, 0)
+                viewModel.updateList(it)
         }
 
         TrackingService.alwaysPermissionRequest.observe(this) {
@@ -289,7 +317,6 @@ class DSDActivity : ComponentActivity() {
                     .show()
             }
         }
-
     }
 
     // 서비스 호출
@@ -299,6 +326,14 @@ class DSDActivity : ComponentActivity() {
             applicationContext.startService(it)
         }
 }
+
+@Composable
+fun ResultScreen(exit: () -> Boolean, drivingResult: MutableState<DrivingResponse?>)  {
+
+    HistoryDetailScreen(drivingResponse = drivingResult.value)
+}
+
+
 
 @Composable
 fun ExitDialog(onDismiss: () -> Unit, onYes: () -> Unit) {

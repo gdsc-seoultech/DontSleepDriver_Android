@@ -30,7 +30,7 @@ android {
         }
     }
     aaptOptions {
-        noCompress = "tflite"
+//        noCompress = "tflite"
     }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
@@ -57,8 +57,8 @@ android {
 
 dependencies {
 
-    implementation 'org.tensorflow:tensorflow-lite-support:0.1.0'
-    implementation 'org.tensorflow:tensorflow-lite-metadata:0.1.0'
+//    implementation 'org.tensorflow:tensorflow-lite-support:0.1.0'
+//    implementation 'org.tensorflow:tensorflow-lite-metadata:0.1.0'
     def nav_version = "2.4.1"
 
     implementation 'androidx.core:core-ktx:1.7.0'
@@ -125,8 +125,8 @@ dependencies {
     // Easy Permissions
     implementation 'pub.devrel:easypermissions:3.0.0'
 
-    // Import tflite dependencies
-    implementation 'org.tensorflow:tensorflow-lite:0.0.0-nightly-SNAPSHOT'
+//    // Import tflite dependencies
+//    implementation 'org.tensorflow:tensorflow-lite:0.0.0-nightly-SNAPSHOT'
 
     // Import the BoM for the Firebase platform
     implementation platform('com.google.firebase:firebase-bom:29.0.4')
@@ -147,4 +147,7 @@ dependencies {
 
     // ml kit
     implementation 'com.google.android.gms:play-services-mlkit-face-detection:17.0.1'
+
+    // http logging
+    implementation("com.squareup.okhttp3:logging-interceptor:4.9.3")
 }

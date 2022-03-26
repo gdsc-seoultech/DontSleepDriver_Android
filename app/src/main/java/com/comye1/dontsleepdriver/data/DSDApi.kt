@@ -1,6 +1,7 @@
 package com.comye1.dontsleepdriver.data
 
 import com.comye1.dontsleepdriver.data.model.*
+import retrofit2.Call
 import retrofit2.http.*
 
 interface DSDApi {
