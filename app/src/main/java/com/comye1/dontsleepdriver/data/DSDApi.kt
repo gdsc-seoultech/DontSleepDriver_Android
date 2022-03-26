@@ -46,10 +46,10 @@ interface DSDApi {
     ): DSDResponse
 
     @POST("api/driver/gpsData")
-    suspend fun postDriving(
+    fun postDriving(
         @HeaderMap header: Map<String, String>,
         @Body driving: DrivingBody
-    ): DrivingPostResponse
+    ): Call<DrivingPostResponse>
 
     @GET("api/driver/pages")
     suspend fun getHistoryPages(

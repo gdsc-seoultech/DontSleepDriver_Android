@@ -3,12 +3,11 @@ package com.comye1.dontsleepdriver.repository
 import android.content.Context
 import android.content.SharedPreferences
 import android.util.Log
+import androidx.compose.runtime.MutableState
 import androidx.core.content.edit
 import com.comye1.dontsleepdriver.data.DSDApi
 import com.comye1.dontsleepdriver.data.model.*
 import com.comye1.dontsleepdriver.util.Resource
-import com.google.gson.Gson
-import com.google.gson.GsonBuilder
 import dagger.hilt.android.scopes.ActivityScoped
 import retrofit2.Call
 import retrofit2.Callback
@@ -79,8 +78,7 @@ class DSDRepository @Inject constructor(
 
     private fun getSavedToken(): String? = tokenSharedPref.getString("TOKEN", null)
 
-    private fun String.toTokenMap(): Map<String, String>
-    = mapOf(Pair("Authorization", this))
+    private fun String.toTokenMap(): Map<String, String> = mapOf(Pair("Authorization", this))
 
 
     suspend fun getUser(): Resource<DSDResponse> {
@@ -110,7 +108,7 @@ class DSDRepository @Inject constructor(
 
     fun getSavedSound(email: String): Int = tokenSharedPref.getInt(email, -1)
 
-    suspend fun kakaoSignIn(accessToken: String): Resource<DSDResponse>{
+    suspend fun kakaoSignIn(accessToken: String): Resource<DSDResponse> {
         val response = try {
             api.kakaoSignIn(OAuthBody(accessToken))
         } catch (e: Exception) {
@@ -122,7 +120,7 @@ class DSDRepository @Inject constructor(
         return Resource.Success(response)
     }
 
-    suspend fun googleSignIn(idToken: String): Resource<DSDResponse>{
+    suspend fun googleSignIn(idToken: String): Resource<DSDResponse> {
         val response = try {
             api.googleSignIn(OAuthBody(idToken))
         } catch (e: Exception) {
@@ -134,7 +132,7 @@ class DSDRepository @Inject constructor(
         return Resource.Success(response)
     }
 
-    suspend fun naverSignIn(accessToken: String): Resource<DSDResponse>{
+    suspend fun naverSignIn(accessToken: String): Resource<DSDResponse> {
         val response = try {
             api.naverSignIn(OAuthBody(accessToken))
         } catch (e: Exception) {
@@ -183,21 +181,37 @@ class DSDRepository @Inject constructor(
         return Resource.Success(response.data)
     }
 
-    suspend fun postDrivingItem(driving: DrivingBody): Resource<DrivingData> {
+    fun postDrivingItem(driving: DrivingBody, savedId: MutableState<Int>): Resource<DrivingData> {
         val token = getSavedToken() ?: return Resource.Error("token does not exist")
 
-        Log.d("postDrivingItem","repository")
+        Log.d("postDrivingItem", "repository")
 
-        val response = try {
-            api.postDriving(token.toTokenMap(), driving)
-        } catch (e: Exception) {
-            Log.d("repo 10 exception", e.localizedMessage?: "")
-            return Resource.Error(e.toString())
-        }
-        Log.d("repo 10 success", response.data.toString())
-        response.data?.let {
-            return Resource.Success(it)
-        }
+        api.postDriving(token.toTokenMap(), driving = driving)
+            .enqueue(object : Callback<DrivingPostResponse> {
+                override fun onResponse(
+                    call: Call<DrivingPostResponse>,
+                    response: Response<DrivingPostResponse>
+                ) {
+                   if (response.isSuccessful) {
+                       savedId.value = response.body()?.data?.id ?: -1
+                   }
+                }
+
+                override fun onFailure(call: Call<DrivingPostResponse>, t: Throwable) {
+
+                }
+            })
+
+//        val response = try {
+//            api.postDriving(token.toTokenMap(), driving)
+//        } catch (e: Exception) {
+//            Log.d("repo 10 exception", e.localizedMessage?: "")
+//            return Resource.Error(e.toString())
+//        }
+//        Log.d("repo 10 success", response.data.toString())
+//        response.data?.let {
+//            return Resource.Success(it)
+//        }
         return Resource.Error("data null")
     }
 }
