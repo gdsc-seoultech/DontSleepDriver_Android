@@ -1,6 +1,5 @@
 package com.comye1.dontsleepdriver.analyzer
 
-import android.content.Context
 import android.util.Log
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
@@ -14,7 +13,7 @@ import kotlinx.coroutines.launch
 
 
 @androidx.camera.core.ExperimentalGetImage
-class SleepAnalyzer(context: Context, private val listener: (String) -> Unit) :
+class SleepAnalyzer(private val listener: (Boolean) -> Unit) :
     ImageAnalysis.Analyzer {
 
     companion object {
@@ -37,14 +36,10 @@ class SleepAnalyzer(context: Context, private val listener: (String) -> Unit) :
             // Pass image to an ML Kit Vision API
             // ...
 
-            val result = detector.process(image)
+            detector.process(image)
                 .addOnSuccessListener { faces ->
                     faces.forEach {
-                        listener("${it.leftEyeOpenProbability} ${it.rightEyeOpenProbability}")
-                        Log.d(
-                            "facedetection",
-                            "${it.leftEyeOpenProbability} ${it.rightEyeOpenProbability}"
-                        )
+                        listener(it.leftEyeOpenProbability!! < 0.5f && it.rightEyeOpenProbability!! < 0.5f)
                     }
 
                 }
@@ -53,7 +48,7 @@ class SleepAnalyzer(context: Context, private val listener: (String) -> Unit) :
                 }
                 .addOnCompleteListener {
                     CoroutineScope(Dispatchers.IO).launch {
-                        delay(5000)
+                        delay(500)
                         imageProxy.close()
                     }
                 }

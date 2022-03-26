@@ -22,13 +22,11 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
 import com.comye1.dontsleepdriver.analyzer.SleepAnalyzer
-import java.util.concurrent.Executors
 
 @Composable
-fun CameraView() {
+fun CameraView(addEyeState: (Int) -> Unit) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
-    val extractedText = remember { mutableStateOf("") }
 
     Column(
         modifier = Modifier.fillMaxSize()
@@ -36,10 +34,16 @@ fun CameraView() {
         DetectionView(
             context = context,
             lifecycleOwner = lifecycleOwner,
-            extractedText = extractedText
+            sleepListener = {
+                if (it) {
+                    addEyeState(1)
+                } else {
+                    addEyeState(0)
+                }
+            }
         )
         Text(
-            text = extractedText.value,
+            text = "",
             modifier = Modifier
                 .fillMaxWidth()
                 .background(Color.White)
@@ -53,14 +57,12 @@ fun CameraView() {
 fun DetectionView(
     context: Context,
     lifecycleOwner: LifecycleOwner,
-    extractedText: MutableState<String>
+    sleepListener: (Boolean) -> Unit
 ) {
     val cameraProviderFuture = remember { ProcessCameraProvider.getInstance(context) }
     var preview by remember { mutableStateOf<Preview?>(null) }
     val executor = ContextCompat.getMainExecutor(context)
     val cameraProvider = cameraProviderFuture.get()
-//    val textRecognizer = remember { TextRecognition.getClient() }
-    val cameraExecutor = remember { Executors.newSingleThreadExecutor() }
 
     Box {
         AndroidView(
@@ -74,7 +76,11 @@ fun DetectionView(
 //                    preview = ImageAnalysis.Builder()
 //                        .setTargetResolution(Size(224, 224))
 
-                    val analyzer = SleepAnalyzer(context) { extractedText.value = it }
+                    val analyzer = SleepAnalyzer() {
+                        // 양쪽 눈 값에서..
+                        // true -> 1 양쪽 눈 감음 false -> 0 괜찮음
+                        sleepListener(it)
+                    }
 
                     Log.d("SleepAnalyzer", analyzer.toString())
 

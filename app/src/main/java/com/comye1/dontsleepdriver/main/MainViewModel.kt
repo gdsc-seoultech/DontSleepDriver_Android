@@ -1,7 +1,10 @@
 package com.comye1.dontsleepdriver.main
 
 import android.util.Log
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.comye1.dontsleepdriver.R
@@ -32,13 +35,51 @@ class MainViewModel @Inject constructor(
 
     val isSaved = mutableStateOf(false)
 
+    val provideWarning = mutableStateOf(false)
+
     val gpsList = mutableListOf<LatLng>()
 
     val sleepList = mutableListOf<Int>()
 
-    fun updateList(gps: LatLng, level: Int) {
+    var backgroundColor by mutableStateOf(Color.Red)
+
+    private val eyeStateList = mutableListOf(0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+
+    var putIndex = 0 // 0 1 2 3 4
+
+    fun addEyeState(state: Int) {
+        Log.d("eyetracking", "index: $putIndex, state: $state")
+        eyeStateList[putIndex++] = state
+        putIndex %= 10
+    }
+
+    private fun getSleepState(): Int {
+        Log.d("eyetracking", eyeStateList.joinToString(" "))
+        Log.d("eyetracking", sleepList.joinToString(" "))
+        eyeStateList.sum().let {
+            Log.d("eyetracking", "sum : $it")
+            when {
+                it < 4 -> {
+                    // 양호
+                    provideWarning.value = false
+                }
+//                it < 6 -> {
+//                    //
+//                }
+//                it < 8 -> {
+//
+//                }
+                else -> {
+                    provideWarning.value = true
+                }
+            }
+            return it
+        }
+    }
+
+    fun updateList(gps: LatLng) {
         gpsList.add(gps)
-        sleepList.add(level)
+        sleepList.add(getSleepState())
     }
 
     fun saveDriving() {
@@ -49,9 +90,13 @@ class MainViewModel @Inject constructor(
     }
 
 
-
-    fun setTrackingState(state: Boolean){
+    fun setTrackingState(state: Boolean) {
         isTracking.value = state
+        if (state) {
+            eyeStateList.fill(0)
+        } else {
+            eyeStateList.fill(-1)
+        }
     }
 
     fun updateTimeText(newTime: String) {
@@ -83,7 +128,7 @@ class MainViewModel @Inject constructor(
                             _user.value =
                                 LocalUser(
                                     email = data.data!!.email,
-                                    id = data.data.id ?: -1
+                                    id = data.data.id
                                 )
                         }
 
