@@ -1,5 +1,6 @@
 package com.comye1.dontsleepdriver.history
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -27,6 +28,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.comye1.dontsleepdriver.data.model.DrivingResponse
 import com.comye1.dontsleepdriver.ui.theme.DontSleepDriverTheme
+import com.comye1.dontsleepdriver.util.getColorByLevel
 
 @Composable
 fun HistoryScreen(
@@ -190,7 +192,8 @@ fun HistoryItem(item: DrivingResponse, onClick: () -> Unit) {
         Column(
             Modifier
                 .clip(RoundedCornerShape(4.dp))
-                .border(1.dp, Color.LightGray, RoundedCornerShape(4.dp))
+//                .border(1.dp, Color.LightGray, RoundedCornerShape(4.dp))
+                .background(getColorByLevel(item.avgSleepLevel.toInt()))
                 .padding(8.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
