@@ -8,6 +8,9 @@ The death rate from drowsy driving is much higher than drunk driving, but awaren
 
 So, to solve this problem, we created an app to prevent drowsy driving called Dont Sleep Driver.
 
+### Download
+[Don't Sleep Driver v1.0.0](https://github.com/gdsc-seoultech/DontSleepDriver_Android/releases/tag/v1.0.0)
+
 ## Feature
 
 Users can sign in with their email and password and can easily sign up and sign in with OAuth2.0 technology.    
