@@ -4,8 +4,7 @@ import android.annotation.SuppressLint
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.NotificationManager.IMPORTANCE_LOW
-import android.app.PendingIntent.FLAG_UPDATE_CURRENT
-import android.app.PendingIntent.getService
+import android.app.PendingIntent.*
 import android.content.Context
 import android.content.Intent
 import android.os.Build
@@ -100,7 +99,6 @@ class TrackingService : LifecycleService() {
         }
     }
 
-
     private fun pauseService() {
         Log.d("tracking service", "paused")
         isTracking.postValue(false)
@@ -166,12 +164,12 @@ class TrackingService : LifecycleService() {
             val pauseIntent = Intent(this, TrackingService::class.java).apply {
                 action = ACTION_PAUSE_SERVICE
             }
-            getService(this, 1, pauseIntent, FLAG_UPDATE_CURRENT)
+            getService(this, 1, pauseIntent, FLAG_MUTABLE)
         } else {
             val resumeIntent = Intent(this, TrackingService::class.java).apply {
                 action = ACTION_START_OR_RESUME_SERVICE
             }
-            getService(this, 2, resumeIntent, FLAG_UPDATE_CURRENT)
+            getService(this, 2, resumeIntent, FLAG_MUTABLE)
         }
 
         val notificationManager =
@@ -238,16 +236,6 @@ class TrackingService : LifecycleService() {
             Log.d(TAG, "availability : ${p0.isLocationAvailable}")
         }
     }
-
-//    // 위치정보 어떻게 축적할지..
-//    private fun addPoint(location: Location?) {
-//        location?.let {
-//            previousLocation.value?.apply {
-//                // 거리, 속력 계산
-//                previousLocation.postValue(it)
-//            }
-//        }
-//    }
 
     // Foreground Service 시작
     private fun startForegroundService() {
