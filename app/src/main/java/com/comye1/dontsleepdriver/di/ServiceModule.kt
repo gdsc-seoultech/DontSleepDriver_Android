@@ -30,13 +30,13 @@ object ServiceModule {
     @Provides
     fun provideMainActivityPendingIntent(
         @ApplicationContext app: Context
-    ) = PendingIntent.getActivity(
+    ): PendingIntent = PendingIntent.getActivity(
         app,
         0,
         Intent(app, DSDActivity::class.java).also {
             it.action = Constants.ACTION_SHOW_DSD_ACTIVITY
         },
-        PendingIntent.FLAG_UPDATE_CURRENT
+        PendingIntent.FLAG_MUTABLE
     )
 
     @ServiceScoped
@@ -47,7 +47,7 @@ object ServiceModule {
     ) = NotificationCompat.Builder(app, NOTIFICATION_CHANNEL_ID)
         .setAutoCancel(false) // active
         .setOngoing(true) // not be swiped
-        .setSmallIcon(R.drawable.ic_google_icon)
+        .setSmallIcon(R.drawable.d_notification)
         .setContentTitle("You are driving for")
         .setContentText("00:00:00")
 //            .setContentText("getting location & recording with camera")
