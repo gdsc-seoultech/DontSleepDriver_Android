@@ -8,8 +8,8 @@ import com.comye1.dontsleepdriver.ui.theme.DSDYellow
 
 fun getColorByLevel(level: Int): Color = when {
     level == -1 -> Color.White
-    level < 3 -> DSDGreen
-    level < 5 -> DSDYellow
-    level < 7 -> DSDPeach
+    level < 2 -> DSDGreen
+    level < 4 -> DSDYellow
+    level < 6 -> DSDPeach
     else -> DSDRed
 }
