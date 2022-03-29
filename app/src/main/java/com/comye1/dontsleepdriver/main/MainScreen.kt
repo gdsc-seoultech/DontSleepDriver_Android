@@ -67,7 +67,7 @@ fun SoundDialog(
                 Text("Select your alert sound")
             }
             Divider()
-            Row(modifier = Modifier.weight(1f)) {
+            Column(modifier = Modifier.weight(1f)) {
                 SoundsRadioGroup(
                     list = soundList,
                     selectedItem = selectedItem,
@@ -117,20 +117,24 @@ fun SoundsRadioGroup(
     val player = remember {
         mutableStateOf(MediaPlayer.create(context, selectedItem.value))
     }
-
-    list.forEach {
-        SoundRadioRow(soundName = it.first, selected = it.second == selectedItem.value) {
-            if (selectedItem.value != it.second) {
-                selectedItem.value = it.second
-                player.value.stop()
-                player.value = MediaPlayer.create(context, it.second)
-                player.value.start()
-            } else {
-                player.value.start()
+    LazyColumn(modifier = Modifier.fillMaxSize()) {
+        items(list) {
+            SoundRadioRow(soundName = it.first, selected = it.second == selectedItem.value) {
+                if (selectedItem.value != it.second) {
+                    selectedItem.value = it.second
+                    player.value.stop()
+                    player.value = MediaPlayer.create(context, it.second)
+                    player.value.start()
+                } else {
+                    player.value.start()
+                }
             }
         }
     }
-    if (stop) player.value.stop()
+    if (stop) {
+        player.value.stop()
+        player.value.release()
+    }
 }
 
 @Composable

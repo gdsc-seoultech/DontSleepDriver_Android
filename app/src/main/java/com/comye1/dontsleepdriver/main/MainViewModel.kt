@@ -10,6 +10,7 @@ import com.comye1.dontsleepdriver.R
 import com.comye1.dontsleepdriver.data.model.DrivingBody
 import com.comye1.dontsleepdriver.data.model.DrivingResponse
 import com.comye1.dontsleepdriver.data.model.LocalUser
+import com.comye1.dontsleepdriver.data.model.Location
 import com.comye1.dontsleepdriver.repository.DSDRepository
 import com.comye1.dontsleepdriver.util.Resource
 import com.google.android.gms.maps.model.LatLng
@@ -18,6 +19,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
 @HiltViewModel
@@ -34,98 +36,91 @@ class MainViewModel @Inject constructor(
     lateinit var startTime: String
     lateinit var endTime: String
 
+    val notStartedYet
+        get() = curTimeText.value == "00:00:00"
+
     val selectedSound = mutableStateOf(-1)
 
     val isTracking = mutableStateOf(false)
 
-    val isSaved = mutableStateOf(false)
+    val savedId = mutableStateOf(0)
 
     val drivingResult = mutableStateOf<DrivingResponse?>(null)
 
-    var warningLevel by mutableStateOf(0)
+    var warningLevel by mutableStateOf(-1)
 
-    val gpsList = mutableListOf<LatLng>()
+    private val gpsList = mutableListOf<Location>()
 
-    val sleepList = mutableListOf<Int>()
+    private val sleepList = mutableListOf<Int>()
 
-    private val eyeStateList = mutableListOf(0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+    private val eyeStateList = mutableListOf(0, 0, 0, 0, 0, 0, 0)
 
     var putIndex = 0 // 0 1 2 3 4
 
     fun addEyeState(state: Int) {
         Log.d("eyetracking", "index: $putIndex, state: $state")
         eyeStateList[putIndex++] = state
-        putIndex %= 10
+        warningLevel = eyeStateList.sum()
+        putIndex %= 7
     }
 
-    private fun getSleepState(): Int {
-        Log.d("eyetracking", eyeStateList.joinToString(" "))
-        Log.d("eyetracking", sleepList.joinToString(" "))
-        eyeStateList.sum().let {
-            Log.d("eyetracking", "sum : $it")
-            when {
-                it < 3 -> {
-                    // 양호
-                    warningLevel = 1
-                }
-//                it < 6 -> {
-//                    //
-//                }
-//                it < 8 -> {
-//
-//                }
-                else -> {
-                    warningLevel = 3
-                }
-            }
-            return it
-        }
-    }
-
-    fun updateList(gps: LatLng) {
-        gpsList.add(gps)
-        sleepList.add(getSleepState())
-    }
-
-    fun saveDriving(totalTime: Long) {
-        // 0인 gps 제거
-        Log.d("driving", gpsList.joinToString(" "))
-        Log.d("driving", sleepList.joinToString(""))
-        endTime = LocalDateTime.now().toString()
+    fun getDrivingItem() {
         viewModelScope.launch {
-            repository.postDrivingItem(
-                DrivingBody(
-                    startTime = startTime,
-                    endTime = endTime,
-                    totalTime = (totalTime / 1000).toInt(),
-                    gpsData = gpsList,
-                    gpsLevel = sleepList,
-                    avgSleepLevel = sleepList.average()
-                )
-            ).also {
-                when(it) {
+            repository.getDrivingItem(savedId.value).also {
+                when (it) {
                     is Resource.Success -> {
                         drivingResult.value = it.data
                     }
                     is Resource.Error -> {
-
+                        // 에러
                     }
                 }
             }
-
         }
-        isSaved.value = true
+    }
+
+    private fun getCurrentTimeString(): String =
+        LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy/MM/dd kk:mm:ss"))
+
+    fun updateList(gps: LatLng) {
+        gpsList.add(Location(lng = gps.longitude, lat = gps.latitude))
+        sleepList.add(warningLevel)
+    }
+
+    fun saveDriving(totalTime: Long, onComplete: () -> Unit) {
+        // 0인 gps 제거
+        Log.d("driving", gpsList.joinToString(" "))
+        Log.d("driving", sleepList.joinToString(""))
+        eyeStateList.fill(-1)
+        warningLevel = -1
+        endTime = getCurrentTimeString()
+//        viewModelScope.launch {
+        repository.postDrivingItem(
+            DrivingBody(
+                startTime = startTime,
+                endTime = endTime,
+                totalTime = (totalTime / 1000).toInt(),
+                gpsData = gpsList,
+                gpsLevel = sleepList,
+                avgSleepLevel = sleepList.average()
+            ),
+            savedId
+        ).also {
+            onComplete()
+        }
+//        }
     }
 
 
     fun setTrackingState(state: Boolean) {
         isTracking.value = state
-        warningLevel = 0
-        if (state) {
-            if (curTimeText.value == "00:00:00")
-                startTime = LocalDateTime.now().toString()
+        if (notStartedYet)
+            startTime = getCurrentTimeString()
+        if (state) { //true
+            warningLevel = 0
             eyeStateList.fill(0)
-        } else {
+        }else {
+            warningLevel = -1
             eyeStateList.fill(-1)
         }
     }
@@ -151,6 +146,7 @@ class MainViewModel @Inject constructor(
     }
 
     init {
+        getSelectedSound()
         viewModelScope.launch {
             repository.getUser().also {
                 when (it) {
@@ -173,7 +169,6 @@ class MainViewModel @Inject constructor(
                     }
                 }
             }
-            getSelectedSound()
         }
     }
 }
