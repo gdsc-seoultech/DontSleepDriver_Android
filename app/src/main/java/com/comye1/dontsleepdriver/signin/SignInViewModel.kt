@@ -55,7 +55,7 @@ class SignInViewModel @Inject constructor(
     }
 
     // 로그인 요청 전에 이메일 유효성 검사 (공백, 이메일 패턴)
-    fun emailChecker(): Pair<Boolean, String> {
+    private fun emailChecker(): Pair<Boolean, String> {
         return if (email.isBlank()) {
             Pair(false, "Fill up your email")
         } else if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
