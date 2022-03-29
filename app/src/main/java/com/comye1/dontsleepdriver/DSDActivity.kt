@@ -2,36 +2,35 @@ package com.comye1.dontsleepdriver
 
 import android.content.Context
 import android.content.Intent
+import android.media.MediaPlayer
 import android.os.Bundle
 import android.util.AttributeSet
 import android.util.Log
 import android.view.View
+import android.view.WindowManager
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ExitToApp
-import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.MusicNote
-import androidx.compose.material.icons.filled.PersonOutline
+import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.lifecycle.MutableLiveData
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -47,9 +46,11 @@ import com.comye1.dontsleepdriver.other.Constants.ACTION_SHOW_DSD_ACTIVITY
 import com.comye1.dontsleepdriver.other.Constants.ACTION_START_OR_RESUME_SERVICE
 import com.comye1.dontsleepdriver.other.Constants.ACTION_STOP_SERVICE
 import com.comye1.dontsleepdriver.service.TrackingService
+import com.comye1.dontsleepdriver.ui.LoadingAnimation
 import com.comye1.dontsleepdriver.ui.theme.Black
 import com.comye1.dontsleepdriver.ui.theme.DontSleepDriverTheme
 import com.comye1.dontsleepdriver.util.TrackingUtility
+import com.comye1.dontsleepdriver.util.getColorByLevel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
@@ -58,10 +59,21 @@ class DSDActivity : ComponentActivity() {
 
     private val viewModel: MainViewModel by viewModels()
     private var curTimeInMillis = 0L
+    private lateinit var player: MediaPlayer
+
+    var thirtyAlarm = MutableLiveData(false)
+    var twoAlarm = MutableLiveData(false)
 
     override fun onCreateView(name: String, context: Context, attrs: AttributeSet): View? {
         subscribeToObservers(viewModel::setTrackingState)
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+
         return super.onCreateView(name, context, attrs)
+    }
+
+    override fun onDestroy() {
+        player.release()
+        super.onDestroy()
     }
 
     @ExperimentalMaterialApi
@@ -72,224 +84,293 @@ class DSDActivity : ComponentActivity() {
             window.statusBarColor = Black.toArgb()
 
             val navController = rememberNavController()
+            player = MediaPlayer.create(this, viewModel.selectedSound.value)
+//            warningSound = Uri.parse("android.resource://" + this.packageName + "/" + viewModel.selectedSound.value)
+//            twoSound = Uri.parse("android.resource://" + this.packageName + "/" + R.raw.voice_2_hours)
+//            thirtySound = Uri.parse("android.resource://" + this.packageName + "/" + R.raw.voice_30_minutes)
 
 
-            NavHost(navController = navController, startDestination = "dsd_main") {
-                composable("dsd_history") {
-                    HistoryScreen({ navController.popBackStack() })
-                }
+            DontSleepDriverTheme {
 
-                composable("dsd_result"){
-                    ResultScreen({navController.popBackStack()}, viewModel.drivingResult)
-                }
 
-                composable("dsd_main") {
-                    val (exitDialogShown, showExitDialog) = remember {
-                        mutableStateOf(false)
-                    }
-                    val context = LocalContext.current
-
-                    val user = viewModel.user.collectAsState()
-
-                    val (soundDialogShown, showSoundDialog) = remember {
-                        mutableStateOf(false)
+                NavHost(navController = navController, startDestination = "dsd_main") {
+                    composable("dsd_history") {
+                        HistoryScreen({ navController.popBackStack() })
                     }
 
-                    val selectedSound = remember {
-                        // 뷰모델, repository에서 가져와야 함
-                        viewModel.selectedSound
+                    composable("dsd_result") {
+                        viewModel.getDrivingItem()
+                        ResultScreen({ navController.popBackStack() }, viewModel.drivingResult)
                     }
 
-                    val modalBottomSheetState =
-                        rememberModalBottomSheetState(initialValue = ModalBottomSheetValue.Hidden)
-
-                    val scope = rememberCoroutineScope()
-
-                    // Notification을 통해 시작된 경우
-                    if (intent.action == ACTION_SHOW_DSD_ACTIVITY) {
-                        Log.d("Tracking", "Pending Intent")
-                        scope.launch {
-//                            setDrivingState(true) // 버튼 상태 변경
-                            // 추후 notification에서의 동작으로 정지, 중지 시키면 판단 필요..
+                    composable("dsd_main") {
+                        val (exitDialogShown, showExitDialog) = remember {
+                            mutableStateOf(false)
                         }
-                    }
 
-                    DontSleepDriverTheme {
+                        val warningState = remember{
+                            mutableStateOf(false)
+                        }
 
-                        ModalBottomSheetLayout(
-                            sheetContent = {
-                                AccountBottomSheetContent(user.value) {
-                                    scope.launch {
-                                        modalBottomSheetState.hide()
-                                    }
-                                }
-                            },
-                            sheetState = modalBottomSheetState,
-                            sheetShape = RoundedCornerShape(8.dp, 8.dp, 0.dp, 0.dp)
-                        ) {
-                            Scaffold(
-                                bottomBar = {
-                                    BottomAppBar {
-                                        IconButton(
-                                            onClick = { showExitDialog(true) },
-                                            enabled = !viewModel.isTracking.value
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Default.ExitToApp,
-                                                contentDescription = "Exit this app"
-                                            )
-                                        }
-                                        Spacer(modifier = Modifier.weight(1f))
-                                        IconButton(
-                                            onClick = { navController.navigate("dsd_history") },
-                                            enabled = !viewModel.isTracking.value
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Default.History,
-                                                contentDescription = "Driving History"
-                                            )
-                                        }
-                                        IconButton(
-                                            onClick = { showSoundDialog(true) },
-                                            enabled = !viewModel.isTracking.value
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Default.MusicNote,
-                                                contentDescription = "Ring Tone"
-                                            )
-                                        }
-                                        IconButton(onClick = {
-                                            scope.launch {
-                                                modalBottomSheetState.show()
-                                            }
-                                        }, enabled = !viewModel.isTracking.value) {
-                                            Icon(
-                                                imageVector = Icons.Default.PersonOutline,
-                                                contentDescription = "Account"
-                                            )
+                        val user = viewModel.user.collectAsState()
+
+                        val (soundDialogShown, showSoundDialog) = remember {
+                            mutableStateOf(false)
+                        }
+
+                        val selectedSound = remember {
+                            // 뷰모델, repository에서 가져와야 함
+                            viewModel.selectedSound
+                        }
+
+                        val modalBottomSheetState =
+                            rememberModalBottomSheetState(initialValue = ModalBottomSheetValue.Hidden)
+
+                        val scope = rememberCoroutineScope()
+
+                        // Notification을 통해 시작된 경우
+                        if (intent.action == ACTION_SHOW_DSD_ACTIVITY) {
+                            Log.d("Tracking", "Pending Intent")
+                            scope.launch {
+//                            setDrivingState(true) // 버튼 상태 변경
+                                // 추후 notification에서의 동작으로 정지, 중지 시키면 판단 필요..
+                            }
+                        }
+
+                        DontSleepDriverTheme {
+
+                            ModalBottomSheetLayout(
+                                sheetContent = {
+                                    AccountBottomSheetContent(user.value) {
+                                        scope.launch {
+                                            modalBottomSheetState.hide()
                                         }
                                     }
                                 },
+                                sheetState = modalBottomSheetState,
+                                sheetShape = RoundedCornerShape(8.dp, 8.dp, 0.dp, 0.dp)
                             ) {
-                                Column(
-                                    Modifier
-                                        .fillMaxSize()
-                                        .background(
-                                            when (viewModel.warningLevel) {
-                                                0 -> Color.White
-                                                1 -> Color.Yellow
-                                                3 -> Color.Red
-                                                else -> Color.Red
+                                Scaffold(
+                                    bottomBar = {
+                                        BottomAppBar {
+                                            IconButton(
+                                                onClick = { showExitDialog(true) },
+                                                enabled = !viewModel.isTracking.value
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.ExitToApp,
+                                                    contentDescription = "Exit this app"
+                                                )
                                             }
-                                        )
-                                        .padding(16.dp)
+                                            Spacer(modifier = Modifier.weight(1f))
+                                            IconButton(
+                                                onClick = { navController.navigate("dsd_history") },
+                                                enabled = !viewModel.isTracking.value
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.History,
+                                                    contentDescription = "Driving History"
+                                                )
+                                            }
+                                            IconButton(
+                                                onClick = { showSoundDialog(true) },
+                                                enabled = !viewModel.isTracking.value
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.MusicNote,
+                                                    contentDescription = "Ring Tone"
+                                                )
+                                            }
+                                            IconButton(onClick = {
+                                                scope.launch {
+                                                    modalBottomSheetState.show()
+                                                }
+                                            }, enabled = !viewModel.isTracking.value) {
+                                                Icon(
+                                                    imageVector = Icons.Default.PersonOutline,
+                                                    contentDescription = "Account"
+                                                )
+                                            }
+                                        }
+                                    },
                                 ) {
-                                    if (viewModel.isSaved.value) {
-                                        Text(text = "gps : ${viewModel.gpsList.joinToString("\n")}")
+                                    Column(
+                                        Modifier
+                                            .fillMaxSize()
+                                            .background(
+                                                getColorByLevel(viewModel.warningLevel)
+                                            )
+                                            .padding(16.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally
+                                    ) {
 
-                                        Text(text = "eye : ${viewModel.sleepList.joinToString(" ")}")
-                                        
-                                        Text(text = "time: ${curTimeInMillis / 1000}")
-                                        
-                                    } else {
                                         if (!viewModel.isTracking.value) {
                                             Spacer(modifier = Modifier.height(100.dp))
-                                            Text(text = "Start Driving!", fontSize = 64.sp)
+                                            Text(
+                                                text = "Safe Driving!",
+                                                style = MaterialTheme.typography.h4
+                                            )
                                         }
                                         Spacer(modifier = Modifier.height(32.dp))
-                                        Text(
-                                            text = "Total Driving Time : ${viewModel.curTimeText.value}",
-                                            fontSize = 24.sp,
-                                            textAlign = TextAlign.Center
-                                        )
-                                        Box(
-                                            Modifier.fillMaxSize()
+                                        if (!viewModel.notStartedYet) {
+                                            Text(
+                                                text = "Total Driving Time",
+                                                style = MaterialTheme.typography.h6
+                                            )
+                                            Text(
+                                                text = viewModel.curTimeText.value,
+                                                style = MaterialTheme.typography.h6
+                                            )
+                                        }
+                                        Spacer(modifier = Modifier.height(32.dp))
+                                        if (viewModel.isTracking.value)
+                                            CameraView(viewModel::addEyeState)
+                                        else
+                                            Image(
+                                                painter = painterResource(id = R.drawable.driving_img),
+                                                contentDescription = "image",
+                                                modifier = Modifier.fillMaxWidth(.7f)
+                                            )
+
+                                        Row(
+                                            Modifier
+                                                .fillMaxSize()
+                                                .padding(bottom = 100.dp),
+                                            verticalAlignment = Alignment.Bottom,
+                                            horizontalArrangement = Arrangement.SpaceAround
                                         ) {
-                                            if (viewModel.isTracking.value)
-                                                CameraView(viewModel::addEyeState)
-                                            Row(
-                                                Modifier
-                                                    .fillMaxSize()
-                                                    .padding(bottom = 100.dp),
-                                                verticalAlignment = Alignment.Bottom,
-                                                horizontalArrangement = Arrangement.SpaceAround
+                                            Button(
+                                                onClick = {
+                                                    sendCommandToService(
+                                                        ACTION_START_OR_RESUME_SERVICE
+                                                    )
+                                                },
+                                                enabled = !viewModel.isTracking.value
                                             ) {
-                                                Button(
-                                                    onClick = {
-                                                        sendCommandToService(
-                                                            ACTION_START_OR_RESUME_SERVICE
-                                                        )
-                                                    },
-                                                    enabled = !viewModel.isTracking.value
-                                                ) {
-                                                    Text(text = "START", fontSize = 24.sp)
-                                                }
-                                                Button(
-                                                    onClick = {
+                                                Text(
+                                                    text = if (viewModel.notStartedYet) "START" else "RESUME",
+                                                    style = MaterialTheme.typography.h6
+                                                )
+                                            }
+                                            Button(
+                                                onClick = {
+                                                    sendCommandToService(
+                                                        ACTION_PAUSE_SERVICE
+                                                    ) // TrackingService 중단
+                                                    player.stop()
+                                                },
+                                                enabled = viewModel.isTracking.value
+                                            ) {
+                                                Text(
+                                                    text = "STOP",
+                                                    style = MaterialTheme.typography.h6
+                                                )
+                                            }
+                                            Button(
+                                                onClick = {
+                                                    if (viewModel.isTracking.value) {
+                                                        // 중지시킴
                                                         sendCommandToService(
                                                             ACTION_PAUSE_SERVICE
                                                         ) // TrackingService 시작
-                                                    },
-                                                    enabled = viewModel.isTracking.value
-                                                ) {
-                                                    Text(text = "STOP", fontSize = 24.sp)
-                                                }
-                                                Button(
-                                                    onClick = {
-                                                        if (viewModel.isTracking.value) {
-                                                            // 중지시킴
-                                                            sendCommandToService(
-                                                                ACTION_PAUSE_SERVICE
-                                                            ) // TrackingService 시작
-                                                        }
-                                                        // 저장하기
-                                                        Log.d("repo repo", "save driving")
-                                                        viewModel.saveDriving(curTimeInMillis)
-                                                        // 서비스 종료하기
-                                                        sendCommandToService(ACTION_STOP_SERVICE)
-                                                    },
-                                                    enabled = curTimeInMillis != 0L
-                                                ) {
-                                                    Text(text = "SAVE", fontSize = 24.sp)
-                                                }
+                                                        player.stop()
+                                                    }
+                                                    // 저장하기
+                                                    Log.d("repo repo", "save driving")
+                                                    viewModel.saveDriving(curTimeInMillis) {
+                                                        navController.navigate("dsd_result")
+                                                    }
+                                                    // 서비스 종료하기
+                                                    sendCommandToService(ACTION_STOP_SERVICE)
+                                                },
+                                                enabled = curTimeInMillis != 0L
+                                            ) {
+                                                Text(
+                                                    text = "SAVE",
+                                                    style = MaterialTheme.typography.h6
+                                                )
                                             }
                                         }
                                     }
-                                }
-                                when(viewModel.warningLevel){
 
-                                }
-                                if (soundDialogShown) {
-                                    SoundDialog(
-                                        onDismiss = { showSoundDialog(false) },
-                                        onOK = {
-                                            selectedSound.value = it
-                                            // 뷰모델 통해 repository에 저장
-                                            viewModel.saveSound(it)
-                                        },
-                                        selected = selectedSound.value
-                                    )
+                                    warningState.value = viewModel.warningLevel > 2
+//
+//            //                                        thirtyState.value = !warningState.value && (curTimeInMillis > 5000L)                        if (!thirtyStatePlayed.value){
+//                                    }
+//                                    if (!twoStatePlayed.value) {
+//                                        twoState.value = !warningState.value && (curTimeInMillis > 10000L) //7200000L
+//                                    }
+//
+                                    if (warningState.value) {
+                                        if (!player.isPlaying) {
+                                            stopPlayer()
+                                            playWarningSound()
+                                        }
+                                    } else if (!warningState.value) {
+                                        stopPlayer()
+                                    }
+
+                                    if (soundDialogShown) {
+                                        SoundDialog(
+                                            onDismiss = { showSoundDialog(false) },
+                                            onOK = {
+                                                selectedSound.value = it
+                                                // 뷰모델 통해 repository에 저장
+                                                viewModel.saveSound(it)
+                                            },
+                                            selected = selectedSound.value
+                                        )
+                                    }
                                 }
                             }
                         }
-                    }
 
-                    /*
-                    뒤로가기 처리 - 다이얼로그 띄우기
-                     */
-                    BackHandler(
-                        onBack = {
-                            showExitDialog(true)
-                        }
-                    )
-                    if (exitDialogShown) {
-                        ExitDialog(onDismiss = { showExitDialog(false) }) {
-                            finishAffinity()
+                        /*
+                        뒤로가기 처리 - 다이얼로그 띄우기
+                         */
+                        BackHandler(
+                            onBack = {
+                                showExitDialog(true)
+                            }
+                        )
+                        if (exitDialogShown) {
+                            ExitDialog(onDismiss = { showExitDialog(false) }) {
+                                // 서비스 종료하기
+                                sendCommandToService(ACTION_STOP_SERVICE)
+                                finishAffinity()
+                            }
                         }
                     }
                 }
+
             }
         }
+    }
+
+    private fun stopPlayer() {
+        player.stop()
+        player.reset()
+    }
+
+    private fun playWarningSound() {
+        player = MediaPlayer.create(this, viewModel.selectedSound.value)
+        player.start()
+    }
+
+    private fun playThirtySound(onComplete: () -> Unit) {
+//        onComplete()
+        player = MediaPlayer.create(this, R.raw.voice_30_minutes)
+        player.start()
+//        player.setOnCompletionListener {
+//            onComplete()
+//        }
+    }
+
+    private fun playTwoSound(onComplete: () -> Unit) {
+//        onComplete()
+        player = MediaPlayer.create(this, R.raw.voice_2_hours)
+        player.start()
+
     }
 
     private fun subscribeToObservers(setTrackingState: (Boolean) -> Unit) {
@@ -301,6 +382,13 @@ class DSDActivity : ComponentActivity() {
 
         TrackingService.timeDrivingInMillis.observe(this) {
             curTimeInMillis = it
+//            Log.d("alert", curTimeInMillis.toString())
+//            if (it > 5000L && ) {
+//                Log.d("alert", "5000L")
+//
+//            }else if (it > 10000L) {
+//                Log.d("alert", "10000L")
+//            }
             val formattedTime = TrackingUtility.getFormattedStopWatchTime(curTimeInMillis)
             viewModel.updateTimeText(formattedTime)
         }
@@ -328,11 +416,33 @@ class DSDActivity : ComponentActivity() {
 }
 
 @Composable
-fun ResultScreen(exit: () -> Boolean, drivingResult: MutableState<DrivingResponse?>)  {
-
-    HistoryDetailScreen(drivingResponse = drivingResult.value)
+fun ResultScreen(exit: () -> Boolean, drivingResult: MutableState<DrivingResponse?>) {
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Driving Result") },
+                navigationIcon = {
+                    IconButton(onClick = { exit() }) {
+                        Icon(
+                            imageVector = Icons.Default.Clear,
+                            contentDescription = "navigate back"
+                        )
+                    }
+                })
+        },
+    ) {
+        if (drivingResult.value == null) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                LoadingAnimation()
+            }
+        } else {
+            HistoryDetailScreen(drivingResponse = drivingResult.value)
+        }
+    }
 }
-
 
 
 @Composable
