@@ -48,7 +48,7 @@ class SleepAnalyzer(private val listener: (Boolean) -> Unit) :
                 }
                 .addOnCompleteListener {
                     CoroutineScope(Dispatchers.IO).launch {
-                        delay(500)
+                        delay(400)
                         imageProxy.close()
                     }
                 }
