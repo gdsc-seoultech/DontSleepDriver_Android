@@ -9,15 +9,13 @@ import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
-import androidx.compose.material.Text
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
@@ -28,28 +26,18 @@ fun CameraView(addEyeState: (Int) -> Unit) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
 
-    Column(
-        modifier = Modifier.fillMaxSize()
-    ) {
-        DetectionView(
-            context = context,
-            lifecycleOwner = lifecycleOwner,
-            sleepListener = {
-                if (it) {
-                    addEyeState(1)
-                } else {
-                    addEyeState(0)
-                }
+    DetectionView(
+        context = context,
+        lifecycleOwner = lifecycleOwner,
+        sleepListener = {
+            if (it) {
+                addEyeState(1)
+            } else {
+                addEyeState(0)
             }
-        )
-        Text(
-            text = "",
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(Color.White)
-                .padding(16.dp)
-        )
-    }
+        }
+    )
+
 }
 
 @SuppressLint("UnsafeOptInUsageError", "RestrictedApi")
@@ -76,7 +64,7 @@ fun DetectionView(
 //                    preview = ImageAnalysis.Builder()
 //                        .setTargetResolution(Size(224, 224))
 
-                    val analyzer = SleepAnalyzer() {
+                    val analyzer = SleepAnalyzer {
                         // 양쪽 눈 값에서..
                         // true -> 1 양쪽 눈 감음 false -> 0 괜찮음
                         sleepListener(it)
